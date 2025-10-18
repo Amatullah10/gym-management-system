@@ -1,0 +1,25 @@
+.side-bar{
+    background-color: black;
+    color:azure;
+    height: 685px;
+    width: 200px;
+}
+.name{
+    color: white;
+    text-align: center;
+    padding-top: 20px;
+}
+.bottom{
+    color: white;
+    text-align: center;
+}
+.headertop{
+    color: black;
+    text-align: center;
+    padding-top: 20px;
+}
+.headerright{
+    color: black;
+    text-align: right;
+    padding-top: 20px;
+}
