@@ -1,5 +1,5 @@
 <?php 
-  $page = 'members'; // change this according to the current page
+  $page = 'dashboard'; // change this according to the current page
   include 'sidebar.php';
 ?>
 <link rel="stylesheet" href="sidebar.css">

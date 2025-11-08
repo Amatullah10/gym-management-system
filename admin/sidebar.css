@@ -3,15 +3,22 @@
   font-family: 'Inter', sans-serif;
    margin: 0;
     padding: 0;
+     overflow: hidden;
 }
+:root {
+  --sidebar-bg: #121212;      /* main dark background */
+  --hover-bg: #1e1e1e;        /* hover color for links */
+  --active-color: #dc2626;    /* bright red for active menu */
+  --text-light: #ffffff;      /* white text */
+}
+
 
 .sidebar {
   width: 20%;
-  background-color: #121212;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+ background-color: var(--sidebar-bg);
+  color: var(--text-light);
+  /* display: flex; */
+  /* flex-direction: column; */
   padding: 24px 16px;
   height: 100%;
 }
@@ -75,6 +82,7 @@
   font-size: 15px;
   text-decoration: none;
   transition: background 0.3s;
+  
 }
 
 .nav-list li a i,
@@ -84,13 +92,15 @@
 }
 
 /* Hover + active */
+
 .nav-list li:hover a,
 .submenu-label:hover {
-  background-color: #1e1e1e;
+  background-color: var(--hover-bg);
 }
 
 .nav-list li.active a {
-  background-color: #1e1e1e;
+  background-color: var(--active-color);
+
 }
 
 /* LOGOUT BUTTON */
@@ -106,7 +116,7 @@
 }
 
 .logout:hover {
-  background-color: #1e1e1e;
+   background-color: var(--hover-bg);
 }
 
 /* ===== SUBMENU ===== */
@@ -139,6 +149,7 @@
   color: #ccc;
   text-decoration: none;
   transition: background 0.3s;
+  
 }
 
 .submenu-items li a i {
@@ -148,8 +159,8 @@
 
 /* Active submenu item */
 .submenu-items li.active a {
-  background: #dc2626; /* red active item */
-  color: #fff;
+   background: var(--active-color);
+  color: var(--text-light);
 }
 
 /* Hover inactive */
