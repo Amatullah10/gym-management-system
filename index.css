@@ -1,0 +1,154 @@
+:root {
+  --sidebar-bg: #121212;
+  --hover-bg: #1e1e1e;
+  --active-color: #941614;
+  --text-light: #ffffff;
+  --brand-red: #b92b2b;
+}
+
+body {
+  background: #f6f6f6;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.login-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.icon-badge {
+  background: var(--brand-red);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  color: #fff;
+  font-size: 26px;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #7a7a7a;
+  margin-bottom: 20px;
+}
+
+.login-form {
+  text-align: left;
+}
+
+/* Custom Dropdown */
+.dropdown {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.selected {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu {
+  display: none;
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  margin-top: 5px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.menu div {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu div:hover {
+  background: var(--sidebar-bg);
+  color: var(--text-light);
+}
+
+.show {
+  display: block;
+}
+
+/* Inputs */
+.input-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.input-wrapper i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7a7a7a;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  outline: none;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 12px;
+  background: var(--brand-red);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn-login:hover {
+  background: #a92323;
+}
+
+.forgot-link {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--active-color);
+  text-decoration: none;
+}
