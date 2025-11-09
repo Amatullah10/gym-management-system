@@ -1,9 +1,50 @@
+<?php
+include("dbcon.php");
+session_start(); // <-- Required to use $_SESSION
 
+if (isset($_POST['submit'])) {
+  $email = $_POST['email'];
+  $password = $_POST['password'];
+  $role = $_POST['role']; // captured from hidden input
 
-  <?php
-// If you later add authentication logic, it will go here
-// Example: session_start(); include('config.php');
+  // Check credentials in database
+  $query = "SELECT * FROM users WHERE email='$email' AND password='$password' AND role='$role'";
+  $data = mysqli_query($conn, $query);
+
+  if ($data && mysqli_num_rows($data) > 0) {
+    // Valid login
+    $_SESSION['email'] = $email;
+    $_SESSION['role'] = $role;
+
+    // Redirect based on role
+    switch ($role) {
+      case 'admin':
+        header("Location: admin/index.php");
+        break;
+      case 'trainer':
+        header("Location: trainer/index.php");
+        break;
+      case 'accountant':
+        header("Location: accountant/index.php");
+        break;
+      case 'receptionist':
+        header("Location: receptionist/index.php");
+        break;
+      case 'customer':
+        header("Location: customer/index.php");
+        break;
+      default:
+        echo "<script>alert('Invalid role');</script>";
+    }
+    exit();
+  } else {
+    echo "<script>alert('Invalid email, password, or role!');</script>";
+  }
+}
 ?>
+
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -29,8 +70,8 @@
     <h2 class="login-title">Fitness Pro</h2>
     <p class="login-subtitle">Sign in to continue</p>
 
-    <form class="login-form">
-
+    <form action ="#" method="POST" class="login-form">
+<input type="hidden" name="role" id="roleInput">
       <label>Login As</label>
       <div class="dropdown">
         <div class="selected"><i class="fa fa-user"></i> Select Role</div>
@@ -46,16 +87,16 @@
       <label>Email</label>
       <div class="input-wrapper">
         <i class="fa fa-envelope"></i>
-        <input type="email" placeholder="Enter email">
+        <input type="email" placeholder="Enter email" name="email">
       </div>
 
       <label>Password</label>
       <div class="input-wrapper">
         <i class="fa fa-lock"></i>
-        <input type="password" placeholder="Enter password">
+        <input type="password" placeholder="Enter password" name="password">
       </div>
 
-      <button type="submit" class="btn-login">Login</button>
+      <button type="submit" class="btn-login" name="submit" >Login</button>
       <a href="#" class="forgot-link">Forgot Password?</a>
 
     </form>
@@ -75,9 +116,11 @@ dropdown.addEventListener("click", () => {
 });
 
 // 2. Select option
+
 options.forEach(option => {
   option.addEventListener("click", () => {
     selected.innerHTML = option.innerHTML;
+     document.getElementById("roleInput").value = option.textContent.trim().toLowerCase();
   });
 });
 

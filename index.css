@@ -62,13 +62,13 @@ body {
 /* Custom Dropdown */
 .dropdown {
   position: relative;
-  width: 100%;
   cursor: pointer;
   margin-bottom: 16px;
+  padding: 0;     /* THIS FIXES THE OFFSET */
 }
 
 .selected {
-  width: 100%;
+ 
   padding: 12px 15px;
   border: 1px solid #ececec;
   border-radius: 10px;
@@ -77,7 +77,25 @@ body {
   align-items: center;
   gap: 8px;
 }
+.dropdown .selected {
 
+  padding: 12px 12px 12px 40px;   /* SAME as input padding */
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.dropdown .selected i {
+  position: absolute;
+  left: 14px;       /* SAME position as icons in input-wrapper */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7a7a7a;
+}
 .menu {
   display: none;
   position: absolute;
