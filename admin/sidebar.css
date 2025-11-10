@@ -3,7 +3,7 @@
   font-family: 'Inter', sans-serif;
    margin: 0;
     padding: 0;
-     overflow: hidden;
+     /* overflow: hidden; */
 }
 :root {
   --sidebar-bg: #121212;      /* main dark background */
@@ -21,6 +21,10 @@
   /* flex-direction: column; */
   padding: 24px 16px;
   height: 100%;
+  position: fixed;
+    top: 0;
+  left: 0;
+
 }
 
 /* BRAND AREA */

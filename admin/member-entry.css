@@ -1,10 +1,10 @@
 /* ====== Base Styles ====== */
-* {
+/* * {
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
-}
+} */
 
-body {
+/* body {
     margin: 0;
     padding: 0;
     background: linear-gradient(135deg, #f3f6f9, #dee7ee);
@@ -14,8 +14,9 @@ body {
     min-height: 100vh;
 }
 
+
 /* ====== Form Container ====== */
-.container {
+/* .container {
     width: 100%;
     max-width: 750px;
     background: #fff;
@@ -23,9 +24,35 @@ body {
     border-radius: 14px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
+} */ */
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f3f6f9, #dee7ee);
+  display: block; /* remove flex centering */
+  min-height: 100vh;
 }
 
-.container:hover {
+/* main content area beside sidebar */
+.main-content {
+  margin-left: 20%; /* matches sidebar width */
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* rename or adjust your container */
+.form-container {
+  width: 100%;
+  max-width: 750px;
+  background: #fff;
+  padding: 40px 50px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  margin-top: 30px; /* gives breathing room from top */
+}
+.form-container:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }

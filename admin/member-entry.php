@@ -1,48 +1,34 @@
 <?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Database connection
-    $conn = new mysqli("localhost", "root", "", "gym_management");
 
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+session_start();
+// if (!isset($_SESSION['email']) || $_SESSION['role'] != 'admin') {
+//     header("Location: ../index.php");
+//     exit();      //this prevents directly opening of the dashboard 
+// }
+$page = 'member-entry'; // current page indicator
 
-    // Collect form data
-    $full_name = $_POST['full_name'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $dob = $_POST['dob'];
-    $gender = $_POST['gender'];
-    $address = $_POST['address'];
-    $membership_type = $_POST['membership_type'];
-    $start_date = $_POST['start_date'];
-    $duration = $_POST['duration'];
-    $end_date = $_POST['end_date'];
-    $fitness_level = $_POST['fitness_level'];
-
-    // Insert into database
-    $sql = "INSERT INTO members (full_name, email, phone, dob, gender, address, membership_type, start_date, duration, end_date, fitness_level)
-            VALUES ('$full_name', '$email', '$phone', '$dob', '$gender', '$address', '$membership_type', '$start_date', '$duration', '$end_date', '$fitness_level')";
-
-    if ($conn->query($sql) === TRUE) {
-        echo "<script>alert('Member registered successfully!');</script>";
-    } else {
-        echo "Error: " . $conn->error;
-    }
-
-    $conn->close();
-}
 ?>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Member Registration</title>
-    <link rel="stylesheet" href="member-entry.css">
+    <!-- <link rel="stylesheet" href="member-entry.css"> -->
+     <link rel="stylesheet" href="sidebar.css">
+  <link rel="stylesheet" href="member-entry.css">
+      <!-- sidebar design -->
+   
 </head>
 <body>
-<div class="container">
+       <?php include 'sidebar.php'; ?>
+<div class="main-content">
+<div class="form-container">
     <h2>Member Registration</h2>
     <form method="POST">
 
@@ -108,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="reset" class="reset">Reset Form</button>
         </div>
     </form>
+</div>
 </div>
 </body>
 </html>
