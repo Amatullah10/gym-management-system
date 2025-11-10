@@ -1,4 +1,9 @@
 <?php 
+session_start();
+if (!isset($_SESSION['email']) || $_SESSION['role'] != 'trainer') {
+    header("Location: ../index.php");
+    exit();      //this prevents directly opening of the dashboard 
+}
   $page = 'dashboard'; // change this according to the current page
   include 'sidebar.php';
 ?>

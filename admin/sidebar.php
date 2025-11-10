@@ -125,8 +125,8 @@
   </div>
 
   <!-- Logout -->
-  <div class="logout">
-    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-  </div>
+  <a href="../logout.php" class="logout">
+  <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+   </a>
 </aside>
 <!-- ======== SIDEBAR END ======== -->
