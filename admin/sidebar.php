@@ -125,7 +125,7 @@
   </div>
 
   <!-- Logout -->
-  <a href="../logout.php" class="logout">
+   <a href="../logout.php" class="logout">
   <i class="fas fa-sign-out-alt"></i><span>Logout</span>
    </a>
 </aside>

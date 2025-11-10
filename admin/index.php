@@ -1,6 +1,6 @@
 <?php
-session_start(); // always start session first
-if (!isset($_SESSION['email']) || $_SESSION['role'] != 'customer') {
+session_start();
+if (!isset($_SESSION['email']) || $_SESSION['role'] != 'admin') {
     header("Location: ../index.php");
     exit();      //this prevents directly opening of the dashboard 
 }
