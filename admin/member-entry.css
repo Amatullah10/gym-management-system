@@ -34,12 +34,11 @@ body {
 
 /* main content area beside sidebar */
 .main-content {
-  margin-left: 20%; /* matches sidebar width */
+  margin-left: 20%;  /*matches sidebar width */
   padding: 40px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-}
+  align-items: flex-start; }
 
 /* rename or adjust your container */
 .form-container {

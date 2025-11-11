@@ -9,24 +9,22 @@ $page = 'member-entry'; // current page indicator
 
 ?>
 
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Member Registration</title>
-    <!-- <link rel="stylesheet" href="member-entry.css"> -->
-     <link rel="stylesheet" href="sidebar.css">
+    
+<link rel="stylesheet" href="sidebar.css">
   <link rel="stylesheet" href="member-entry.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
       <!-- sidebar design -->
    
 </head>
 <body>
-       <?php include 'sidebar.php'; ?>
+<?php include 'sidebar.php'; ?>
 <div class="main-content">
 <div class="form-container">
     <h2>Member Registration</h2>

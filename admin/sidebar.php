@@ -28,7 +28,7 @@
           <li class="<?php if($page=='members'){ echo 'active'; }?>">
             <a href="members.php"><i class="fas fa-arrow-right"></i> List All Members</a>
           </li>
-          <li class="<?php if($page=='members-entry'){ echo 'active'; }?>">
+          <li class="<?php if($page=='member-entry'){ echo 'active'; }?>">
             <a href="member-entry.php"><i class="fas fa-arrow-right"></i> Member Entry Form</a>
           </li>
           <li class="<?php if($page=='members-remove'){ echo 'active'; }?>">
