@@ -42,7 +42,7 @@ $page = basename($_SERVER['PHP_SELF']); // for active state
 
           <ul class="submenu-items">
             <li class="<?= $page === 'members.php' ? 'active' : '' ?>">
-  <a href="../admin1/member.php">
+  <a href="../admin1/members.php">
     <i class="fa-solid fa-arrow-right"></i> List All Members
   </a>
 </li>
