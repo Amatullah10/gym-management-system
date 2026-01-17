@@ -42,25 +42,25 @@ $page = basename($_SERVER['PHP_SELF']); // for active state
 
           <ul class="submenu-items">
             <li class="<?= $page === 'members.php' ? 'active' : '' ?>">
-  <a href="/admin1/members.php">
+  <a href="../admin1/member.php">
     <i class="fa-solid fa-arrow-right"></i> List All Members
   </a>
 </li>
 
 <li class="<?= $page === 'member-entry.php' ? 'active' : '' ?>">
-  <a href="/admin/member-entry.php">
+  <a href="../admin1/member-entry.php">
     <i class="fa-solid fa-arrow-right"></i> Member Entry Form
   </a>
 </li>
 
 <li class="<?= $page === 'remove-member.php' ? 'active' : '' ?>">
-  <a href="/admin/remove-member.php">
+  <a href="../admin/remove-member.php">
     <i class="fa-solid fa-arrow-right"></i> Remove Member
   </a>
 </li>
 
 <li class="<?= $page === 'edit-member.php' ? 'active' : '' ?>">
-  <a href="/admin/edit-member.php">
+  <a href="../admin/edit-member.php">
     <i class="fa-solid fa-arrow-right"></i> Update Member Details
   </a>
 </li>
@@ -78,16 +78,20 @@ $page = basename($_SERVER['PHP_SELF']); // for active state
 
           <ul class="submenu-items">
             <li class="<?= $page === 'staff-list.php' ? 'active' : '' ?>">
-              <a href="/admin/staff-list.php">List Staff</a>
+              <a href="/admin/staff-list.php">
+                <i class="fa-solid fa-arrow-right"></i>List Staff</a>
             </li>
             <li class="<?= $page === 'staff-add.php' ? 'active' : '' ?>">
-              <a href="/admin/staff-add.php">Add Staff</a>
+              <a href="/admin/staff-add.php">
+                <i class="fa-solid fa-arrow-right"></i>Add Staff</a>
             </li>
             <li class="<?= $page === 'staff-remove.php' ? 'active' : '' ?>">
-              <a href="/admin/staff-remove.php">Remove Staff</a>
+              <a href="/admin/staff-remove.php">
+                <i class="fa-solid fa-arrow-right"></i>Remove Staff</a>
             </li>
             <li class="<?= $page === 'staff-update.php' ? 'active' : '' ?>">
-              <a href="/admin/staff-update.php">Update Staff</a>
+              <a href="/admin/staff-update.php">
+                <i class="fa-solid fa-arrow-right"></i>Update Staff</a>
             </li>
           </ul>
         </li>
