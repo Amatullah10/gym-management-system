@@ -1,0 +1,315 @@
+/* ======================================================
+   RESET & BASE
+====================================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #f3f6f9, #dee7ee);
+  color: #333;
+}
+
+/* ======================================================
+   ROOT VARIABLES (THEME)
+====================================================== */
+:root {
+  --card-bg: #ffffff;
+  --border-color: #e2e2e2;
+  --shadow: 0 10px 25px rgba(0,0,0,0.12);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
+  --active-color: #941614;
+}
+
+/* ======================================================
+   LAYOUT - MAIN CONTENT WRAPPER
+====================================================== */
+.main-wrapper {
+  margin-left: 25%; /* Match sidebar width */
+  min-height: 100vh;
+}
+
+.main-content {
+  padding: 30px;
+}
+
+/* ======================================================
+   TYPOGRAPHY
+====================================================== */
+h2 {
+  color: var(--active-color);
+  font-size: 26px;
+  margin-bottom: 25px;
+}
+
+.app-title {
+  text-align: center;
+  color: var(--active-color);
+  font-size: 26px;
+  margin-bottom: 25px;
+}
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* ======================================================
+   DASHBOARD CARDS
+====================================================== */
+.app-card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  height: 100%;
+}
+
+.app-card-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.app-card-value {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* ======================================================
+   FORMS
+====================================================== */
+.form-container {
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.section {
+  border: 1.5px solid var(--border-color);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 30px;
+}
+
+.section h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 18px;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: gray;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+
+/* Form grid for responsive columns */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 15px;
+}
+
+/* Form labels and inputs */
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+/* Style for form controls - higher specificity to override Bootstrap if needed */
+input[type="text"],
+input[type="email"],
+input[type="date"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid #cfcfcf;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  transition: border 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+  border: 2px solid var(--active-color);
+  outline: none;
+  box-shadow: none; /* Override Bootstrap focus shadow */
+}
+
+textarea {
+  resize: vertical;
+  min-height: 65px;
+}
+
+/* ======================================================
+   BUTTONS (OVERRIDE BOOTSTRAP)
+====================================================== */
+/* Primary Button - Red gradient */
+.btn.app-btn-primary {
+  background: linear-gradient(135deg, var(--active-color), #d00000);
+  border: none;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  font-weight: 500;
+}
+
+.btn.app-btn-primary:hover,
+.btn.app-btn-primary:focus {
+  background: linear-gradient(135deg, #b01917, #a00000);
+  transform: scale(1.03);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* Secondary Button - Gray */
+.btn.app-btn-secondary {
+  background: #808080;
+  border: none;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  font-weight: 500;
+}
+
+.btn.app-btn-secondary:hover,
+.btn.app-btn-secondary:focus {
+  background: #6a6a6a;
+  transform: scale(1.03);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* ======================================================
+   TABLES (BOOTSTRAP COMPATIBLE)
+====================================================== */
+.app-table {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.app-table thead th {
+  background: #f5f5f5;
+  font-weight: 600;
+  border: none;
+}
+
+.app-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.app-table td,
+.app-table th {
+  padding: 12px 15px;
+}
+
+/* ======================================================
+   BADGES & STATUS
+====================================================== */
+.app-badge {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.app-badge-success { background: #d4edda; color: #155724; }
+.app-badge-danger  { background: #f8d7da; color: #721c24; }
+.app-badge-warning { background: #fff3cd; color: #856404; }
+
+/* ======================================================
+   ALERTS
+====================================================== */
+.app-alert {
+  padding: 15px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+}
+
+.app-alert-success { 
+  background: #d4edda; 
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.app-alert-error { 
+  background: #f8d7da; 
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+.app-alert-warning { 
+  background: #fff3cd; 
+  color: #856404;
+  border-color: #ffeeba;
+}
+
+/* ======================================================
+   UTILITIES (BOOTSTRAP COMPATIBLE)
+====================================================== */
+.mt-10 { margin-top: 10px !important; }
+.mt-20 { margin-top: 20px !important; }
+.mb-10 { margin-bottom: 10px !important; }
+.mb-20 { margin-bottom: 20px !important; }
+
+.hidden { display: none !important; }
+.flex { display: flex !important; }
+.align-center { align-items: center !important; }
+.justify-between { justify-content: space-between !important; }
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+@media (max-width: 992px) {
+  .main-wrapper {
+    margin-left: 25%;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-wrapper {
+    margin-left: 0;
+  }
+  
+  .main-content {
+    padding: 20px;
+  }
+  
+  .form-container {
+    padding: 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

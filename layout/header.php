@@ -15,7 +15,12 @@
 
   <!-- SIDEBAR CSS -->
   <link rel="stylesheet" href="../css/sidebar.css">
-    <!-- COMMON CSS -->
-  <!-- <link rel="stylesheet" href="/css/common.css"> -->
+
+    <!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Your Common CSS (overrides Bootstrap) -->
+<link rel="stylesheet" href="../css/common.css">
+
 </head>
 <body>
