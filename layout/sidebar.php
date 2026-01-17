@@ -236,7 +236,7 @@ $page = basename($_SERVER['PHP_SELF']); // for active state
   </div>
 
   <!-- LOGOUT -->
-  <a href="/auth/logout.php" class="logout">
+  <a href="../auth/logout.php" class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>Logout
   </a>
 
