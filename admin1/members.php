@@ -55,7 +55,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
   <link rel="stylesheet" href="../css/common.css">
 </head>
 <body>
-
+<?php include '../layout/header.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">

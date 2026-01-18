@@ -1,172 +1,297 @@
+/* ======================================================
+   ROOT VARIABLES (Match common.css)
+====================================================== */
 :root {
-  --sidebar-bg: #121212;
-  --hover-bg: #1e1e1e;
+  --card-bg: #ffffff;
+  --border-color: #e2e2e2;
+  --shadow: 0 10px 25px rgba(0,0,0,0.12);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
   --active-color: #941614;
-  --text-light: #ffffff;
-  --brand-red: #b92b2b;
+  --brand-red: #941614;
+}
+
+/* ======================================================
+   BODY & CONTAINER
+====================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: #f6f6f6;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #f3f6f9, #dee7ee);
+  color: #333;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  margin: 0;
+  min-height: 100vh;
+  padding: 20px;
 }
 
 .login-container {
   width: 100%;
-  max-width: 400px;
-  padding: 20px;
+  max-width: 440px;
 }
 
 .login-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 32px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: var(--shadow);
   text-align: center;
 }
 
+/* ======================================================
+   ICON & TITLE
+====================================================== */
 .icon-badge {
   background: var(--brand-red);
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: auto;
+  margin: 0 auto 16px;
   color: #fff;
-  font-size: 26px;
+  font-size: 30px;
+  box-shadow: 0 4px 12px rgba(148, 22, 20, 0.3);
 }
 
 .login-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
-  margin-top: 10px;
+  margin: 0 0 6px 0;
+  color: #1a1a1a;
 }
 
 .login-subtitle {
   font-size: 14px;
-  color: #7a7a7a;
-  margin-bottom: 20px;
+  color: #999;
+  margin: 0 0 28px 0;
 }
 
+/* ======================================================
+   ERROR MESSAGE
+====================================================== */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ======================================================
+   FORM ELEMENTS
+====================================================== */
 .login-form {
   text-align: left;
 }
 
-/* Custom Dropdown */
+.login-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+/* ======================================================
+   CUSTOM DROPDOWN
+====================================================== */
 .dropdown {
   position: relative;
   cursor: pointer;
-  margin-bottom: 16px;
-  padding: 0;     /* THIS FIXES THE OFFSET */
+  margin-bottom: 15px;
 }
 
-.selected {
- 
-  padding: 12px 15px;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  background: white;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .dropdown .selected {
-
-  padding: 12px 12px 12px 40px;   /* SAME as input padding */
-  border: 1px solid #ececec;
-  border-radius: 10px;
+  width: 100%;
+  padding: 12px 16px 12px 46px;
+  border: 1px solid #cfcfcf;
+  border-radius: var(--radius-md);
   background: white;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   position: relative;
+  transition: border 0.2s;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: #333;
+}
+
+.dropdown .selected:hover {
+  border-color: var(--brand-red);
 }
 
 .dropdown .selected i {
   position: absolute;
-  left: 14px;       /* SAME position as icons in input-wrapper */
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #7a7a7a;
+  color: #666;
+  font-size: 14px;
 }
+
+.dropdown .selected span {
+  flex: 1;
+}
+
 .menu {
   display: none;
   position: absolute;
   width: 100%;
   background: white;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  margin-top: 5px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-top: 4px;
   overflow: hidden;
   z-index: 10;
+  box-shadow: var(--shadow-sm);
 }
 
 .menu div {
-  padding: 10px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+  color: #333;
+}
+
+.menu div i {
+  font-size: 16px;
+  color: #666;
+  width: 20px;
 }
 
 .menu div:hover {
-  background: var(--sidebar-bg);
-  color: var(--text-light);
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
-.show {
+.menu div:hover i {
+  color: #ffffff;
+}
+
+.menu.show {
   display: block;
 }
 
-/* Inputs */
+/* ======================================================
+   INPUT WRAPPER
+====================================================== */
 .input-wrapper {
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 15px;
 }
 
 .input-wrapper i {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #7a7a7a;
+  color: #666;
+  font-size: 14px;
 }
 
 .input-wrapper input {
   width: 100%;
-  padding: 12px 12px 12px 40px;
-  border: 1px solid #ececec;
-  border-radius: 10px;
+  padding: 12px 16px 12px 46px;
+  border: 1px solid #cfcfcf;
+  border-radius: var(--radius-md);
+  outline: none;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  transition: border 0.2s;
+}
+
+.input-wrapper input:focus {
+  border: 2px solid var(--active-color);
   outline: none;
 }
 
+.input-wrapper input::placeholder {
+  color: #999;
+}
+
+/* ======================================================
+   LOGIN BUTTON
+====================================================== */
 .btn-login {
   width: 100%;
-  padding: 12px;
-  background: var(--brand-red);
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--active-color), #d00000);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 15px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 8px;
+  transition: transform 0.2s;
+  font-family: 'Inter', sans-serif;
 }
 
 .btn-login:hover {
-  background: #a92323;
+  background: linear-gradient(135deg, #b01917, #a00000);
+  transform: scale(1.03);
 }
 
+.btn-login:active {
+  transform: scale(1);
+}
+
+/* ======================================================
+   FORGOT PASSWORD LINK
+====================================================== */
 .forgot-link {
   display: block;
   text-align: center;
-  margin-top: 12px;
-  font-size: 13px;
+  margin-top: 16px;
+  font-size: 14px;
   color: var(--active-color);
   text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #b01917;
+  text-decoration: underline;
+}
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 32px 24px;
+  }
+
+  .icon-badge {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
 }

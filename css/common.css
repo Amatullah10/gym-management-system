@@ -35,12 +35,13 @@ body {
    LAYOUT - MAIN CONTENT WRAPPER
 ====================================================== */
 .main-wrapper {
-  margin-left: 30%; /* Match sidebar width */
+  margin-left: 25%; /* Match sidebar width */
   min-height: 100vh;
 }
 
 .main-content {
   padding: 30px;
+  
 }
 
 /* ======================================================
@@ -747,5 +748,96 @@ textarea {
   .modern-table tbody td,
   .members-table tbody td {
     padding: 12px 15px;
+  }
+}
+/* ======================================================
+   TOP HEADER BAR
+====================================================== */
+.top-header {
+  position: fixed;
+  top: 0;
+  left: 25%; /* Match sidebar width */
+  right: 0;
+  height: 70px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e2e2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px 0 20px;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #333;
+  cursor: pointer;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--active-color);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-title i {
+  font-size: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcome-text {
+  font-size: 14px;
+  color: #666;
+}
+
+.user-role {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Adjust main content to account for fixed header */
+.main-wrapper {
+  margin-left: 25%;
+  margin-top: 70px; /* Add margin for fixed header */
+  min-height: calc(100vh - 70px);
+}
+
+.main-content {
+  padding: 30px;
+  padding-left: 20px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .top-header {
+    left: 0;
+  }
+  
+  .menu-toggle {
+    display: block;
+  }
+  
+  .main-wrapper {
+    margin-left: 0;
   }
 }
