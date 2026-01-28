@@ -89,7 +89,7 @@ $user_menu = isset($menus[$user_role]) ? $menus[$user_role] : $menus['guest'];
             <a href="remove-member.php"><i class="fas fa-arrow-right"></i> Remove Member</a>
           </li>
           <li class="<?php if($page=='members-update'){ echo 'active'; }?>">
-            <a href="edit-member.php"><i class="fas fa-arrow-right"></i> Update Member Details</a>
+            <a href="update-member.php"><i class="fas fa-arrow-right"></i> Update Member Details</a>
           </li>
           <?php endif; ?>
         </ul>
