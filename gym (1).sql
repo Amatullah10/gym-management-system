@@ -105,7 +105,7 @@ INSERT INTO `workout_plans` (`id`, `member_id`, `goal`, `current_plan`, `progres
 (1, 1, 'Build Muscle', 'Strength Training Pro', 75, 'Active', '2026-01-18 18:19:34', '2026-01-18 18:19:34'),
 (2, 2, 'Weight Loss', 'Fat Burn Challenge', 60, 'Active', '2026-01-18 18:19:34', '2026-01-18 18:19:34'),
 (3, 3, 'General Fitness', 'Balanced Fitness', 45, 'Active', '2026-01-18 18:19:34', '2026-01-18 18:19:34'),
-(4, 4, 'Strength & Toning', 'Women\'s Strength', 30, 'Pending', '2026-01-18 18:19:34', '2026-01-18 18:19:34'),
+(4, 4, 'Strength & Toning', 'Womens Strength', 30, 'Pending', '2026-01-18 18:19:34', '2026-01-18 18:19:34'),
 (5, 5, 'Weight Loss', 'Strength Training Pro', 50, 'Inactive', '2026-01-18 18:19:34', '2026-01-18 18:22:15');
 
 --
