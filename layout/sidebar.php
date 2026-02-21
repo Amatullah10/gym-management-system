@@ -7,7 +7,7 @@ $menus = [
     'admin' => [
         'dashboard' => true,
         'members' => true,
-        'trainers' => true,
+        'staff' => true,
         'attendance' => true,
         'announcements' => true,
         'payments' => true,
@@ -96,23 +96,23 @@ $user_menu = isset($menus[$user_role]) ? $menus[$user_role] : $menus['guest'];
       </li>
       <?php endif; ?>
 
-      <!-- Trainers Menu - Admin Only -->
-      <?php if (isset($user_menu['trainers']) && $user_menu['trainers']): ?>
-      <li class="submenu">
-        <input type="checkbox" id="trainers-menu" class="toggle-input">
-        <label for="trainers-menu" class="submenu-label">
-          <i class="fas fa-user-tie"></i><span>Trainers</span>
-        </label>
-        <ul class="submenu-items">
-          <li class="<?php if($page=='trainers-list'){ echo 'active'; }?>">
-            <a href="trainers-list.php"><i class="fas fa-arrow-right"></i> All Trainers</a>
-          </li>
-          <li class="<?php if($page=='trainer-add'){ echo 'active'; }?>">
-            <a href="trainer-add.php"><i class="fas fa-arrow-right"></i> Add Trainer</a>
-          </li>
-        </ul>
-      </li>
-      <?php endif; ?>
+    <!-- Manage Staff Menu - Admin Only -->
+<?php if (isset($user_menu['staff']) && $user_menu['staff']): ?>
+<li class="submenu">
+  <input type="checkbox" id="staff-menu" class="toggle-input">
+  <label for="staff-menu" class="submenu-label">
+    <i class="fas fa-user-tie"></i><span>Manage Staff</span>
+  </label>
+  <ul class="submenu-items">
+    <li class="<?php if($page=='staff-list'){ echo 'active'; }?>">
+      <a href="staff-list.php"><i class="fas fa-arrow-right"></i> View All Staff</a>
+    </li>
+    <li class="<?php if($page=='staff-add'){ echo 'active'; }?>">
+      <a href="staff-add.php"><i class="fas fa-arrow-right"></i> Add Staff</a>
+    </li>
+  </ul>
+</li>
+<?php endif; ?>
 
       <!-- Assigned Members - Trainer Only -->
       <?php if (isset($user_menu['assigned_members']) && $user_menu['assigned_members']): ?>
