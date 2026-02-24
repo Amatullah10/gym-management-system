@@ -1,10 +1,14 @@
 <?php
 session_start();
-require_once '../dbcon.php'; // Your existing database connection
+require_once '../dbcon.php';
 
-/* TEMP: simulate logged-in user */
-$_SESSION['role'] = 'receptionist';
-$page = 'members.php'; // For active sidebar highlight
+// Check if user is logged in
+if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
+    header("Location: ../index.php");
+    exit();
+}
+
+$page = 'members'; // For active sidebar highlight
 
 // Fetch all members from database
 $sql = "SELECT * FROM members ORDER BY created_at DESC";
@@ -33,13 +37,14 @@ foreach ($members as $member) {
 // Success message after registration/update
 $success_message = isset($_GET['success']) ? $_GET['success'] : '';
 ?>
-
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
+<!-- Rest of your HTML stays the same -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Members - Gym Management</title> -->
+  <title>Members - Gym Management</title>
   
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -53,8 +58,8 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
   <!-- Custom CSS -->
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
-<!-- </head>
-<body> -->
+</head>
+<body>
 <?php include '../layout/header.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 

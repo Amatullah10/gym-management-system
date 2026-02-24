@@ -1,10 +1,16 @@
 <?php
 session_start();
-require_once '../dbcon.php'; // Your existing database connection
+require_once '../dbcon.php';
 
-/* TEMP: simulate logged-in user */
-$_SESSION['role'] = 'receptionist';
-$page = 'member-entry.php'; // For active sidebar highlight
+// Check if user is logged in
+if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
+    header("Location: ../index.php");
+    exit();
+}
+
+$page = 'member-entry'; // For active sidebar highlight
+
+// For active sidebar highlight
 
 $success_message = '';
 $error_message = '';

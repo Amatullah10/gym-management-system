@@ -1,6 +1,9 @@
 <?php
-include("dbcon.php");
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
+require_once 'dbcon.php';
 
 if (isset($_POST['submit'])) {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
@@ -12,10 +15,19 @@ if (isset($_POST['submit'])) {
     $data = mysqli_query($conn, $query);
 
     if ($data && mysqli_num_rows($data) > 0) {
-        $_SESSION['email'] = $email;
-        $_SESSION['role'] = $role;
+        $row = mysqli_fetch_assoc($data);
+        
+        // CLEAR OLD SESSION FIRST
+        session_unset();
+        session_regenerate_id(true);
+        
+        // SET NEW SESSION WITH DATABASE VALUES
+        $_SESSION['user_id'] = $row['id'];
+        $_SESSION['email']   = $row['email'];
+        $_SESSION['role']    = $row['role'];
 
-        switch ($role) {
+        // Redirect based on role
+        switch ($row['role']) {
             case 'admin':
                 header("Location: admin1/dashboard1.php");
                 break;
