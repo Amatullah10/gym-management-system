@@ -3,7 +3,7 @@
   font-family: 'Inter', sans-serif;
    margin: 0;
     padding: 0;
-     overflow: hidden;
+     
 }
 :root {
   --sidebar-bg: #121212;      /* main dark background */
@@ -14,13 +14,15 @@
 
 
 .sidebar {
-  width: 20%;
- background-color: var(--sidebar-bg);
-  color: var(--text-light);
-  /* display: flex; */
-  /* flex-direction: column; */
-  padding: 24px 16px;
-  height: 100%;
+    width: 25%;
+    background-color: var(--sidebar-bg);
+    color: var(--text-light);
+    padding: 24px 16px;
+    height: 100vh;
+    position: fixed;
+    top: 0;        /* ← make sure this is there */
+    left: 0;
+    overflow-y: auto;
 }
 
 /* BRAND AREA */
@@ -172,4 +174,9 @@
 .submenu-items li a:hover {
   background: #2d2d2d;
   color: #fff;
+}
+
+.main-wrapper {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
