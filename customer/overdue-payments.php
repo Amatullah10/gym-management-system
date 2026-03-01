@@ -14,16 +14,13 @@ if ($_SESSION['role'] != 'customer') {
 $page = 'overdue-payments';
 
 $email = $_SESSION['email'];
-$member_query = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
-$member = mysqli_fetch_assoc($member_query);
+$member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
+$member = mysqli_fetch_assoc($member_res);
 $member_id = $member['id'] ?? 0;
 
 $records = [];
 $res = mysqli_query($conn, "SELECT * FROM payments WHERE member_id = '$member_id' AND status = 'overdue' ORDER BY due_date ASC");
-while ($row = mysqli_fetch_assoc($res)) {
-    $records[] = $row;
-}
-
+while ($row = mysqli_fetch_assoc($res)) { $records[] = $row; }
 $total_overdue = array_sum(array_column($records, 'amount'));
 ?>
 <!DOCTYPE html>
@@ -37,9 +34,7 @@ $total_overdue = array_sum(array_column($records, 'amount'));
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
-  <style>
-    .main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }
-  </style>
+  <style>.main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }</style>
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
@@ -47,14 +42,15 @@ $total_overdue = array_sum(array_column($records, 'amount'));
   <div class="main-content">
 
     <div class="page-header">
-      <h1 class="page-title">Overdue Payments</h1>
-      <p class="page-subtitle">Payments that are past due date</p>
+      <div>
+        <h1 class="page-title">Overdue Payments</h1>
+        <p class="page-subtitle">Payments that are past due date</p>
+      </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div class="stat-info"><h3><?= count($records) ?></h3><p>Overdue Payments</p></div>
       </div>
       <div class="stat-card">
@@ -63,38 +59,26 @@ $total_overdue = array_sum(array_column($records, 'amount'));
       </div>
     </div>
 
-    <!-- Overdue Payments Table -->
     <div class="members-table-container">
-      <div class="table-header">
-        <h3>Overdue Payments</h3>
-      </div>
+      <div class="table-header"><h3>Overdue Payments</h3></div>
       <table class="members-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Amount</th>
-            <th>Due Date</th>
-            <th>Days Overdue</th>
-            <th>Notes</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Amount</th><th>Due Date</th><th>Days Overdue</th><th>Notes</th><th>Status</th></tr></thead>
         <tbody>
           <?php if (!empty($records)): ?>
-            <?php foreach ($records as $i => $r): 
-              $days_overdue = (strtotime(date('Y-m-d')) - strtotime($r['due_date'])) / 86400;
+            <?php foreach ($records as $i => $r):
+              $days_overdue = max(0, round((strtotime(date('Y-m-d')) - strtotime($r['due_date'])) / 86400));
             ?>
               <tr>
                 <td><?= $i + 1 ?></td>
                 <td><strong>₹<?= number_format($r['amount'], 2) ?></strong></td>
                 <td><?= $r['due_date'] ?></td>
-                <td><span style="color:#d32f2f; font-weight:600;"><?= max(0, $days_overdue) ?> days</span></td>
-                <td><?= $r['notes'] ?: '-' ?></td>
+                <td><strong style="color:#d32f2f;"><?= $days_overdue ?> days</strong></td>
+                <td><?= htmlspecialchars($r['notes']) ?: '-' ?></td>
                 <td><span class="status-badge expired">OVERDUE</span></td>
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
-            <tr><td colspan="6" class="text-center" style="color:#aaa; padding:30px;">🎉 No overdue payments! Great job.</td></tr>
+            <tr><td colspan="6" class="text-center" style="padding:30px; color:#aaa;">🎉 No overdue payments! Great job.</td></tr>
           <?php endif; ?>
         </tbody>
       </table>

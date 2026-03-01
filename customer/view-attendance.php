@@ -14,25 +14,19 @@ if ($_SESSION['role'] != 'customer') {
 $page = 'view-attendance';
 
 $email = $_SESSION['email'];
-$member_query = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
-$member = mysqli_fetch_assoc($member_query);
+$member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
+$member = mysqli_fetch_assoc($member_res);
 $member_id = $member['id'] ?? 0;
 
-// Stats
-$total_attendance = 0;
 $res = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM attendance WHERE member_id = '$member_id'");
 $total_attendance = mysqli_fetch_assoc($res)['cnt'];
 
-$this_month = 0;
-$res = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM attendance WHERE member_id = '$member_id' AND MONTH(check_in) = MONTH(NOW()) AND YEAR(check_in) = YEAR(NOW())");
-$this_month = mysqli_fetch_assoc($res)['cnt'];
+$res2 = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM attendance WHERE member_id = '$member_id' AND MONTH(check_in) = MONTH(NOW()) AND YEAR(check_in) = YEAR(NOW())");
+$this_month = mysqli_fetch_assoc($res2)['cnt'];
 
-// Fetch records
 $records = [];
-$res = mysqli_query($conn, "SELECT * FROM attendance WHERE member_id = '$member_id' ORDER BY check_in DESC");
-while ($row = mysqli_fetch_assoc($res)) {
-    $records[] = $row;
-}
+$res3 = mysqli_query($conn, "SELECT * FROM attendance WHERE member_id = '$member_id' ORDER BY check_in DESC");
+while ($row = mysqli_fetch_assoc($res3)) { $records[] = $row; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,9 +39,7 @@ while ($row = mysqli_fetch_assoc($res)) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
-  <style>
-    .main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }
-  </style>
+  <style>.main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }</style>
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
@@ -55,11 +47,12 @@ while ($row = mysqli_fetch_assoc($res)) {
   <div class="main-content">
 
     <div class="page-header">
-      <h1 class="page-title">View Attendance</h1>
-      <p class="page-subtitle">Your gym attendance records</p>
+      <div>
+        <h1 class="page-title">View Attendance</h1>
+        <p class="page-subtitle">Your gym attendance records</p>
+      </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-calendar-check"></i></div>
@@ -71,24 +64,13 @@ while ($row = mysqli_fetch_assoc($res)) {
       </div>
     </div>
 
-    <!-- Attendance Table -->
     <div class="members-table-container">
-      <div class="table-header">
-        <h3>Attendance Records</h3>
-      </div>
+      <div class="table-header"><h3>Attendance Records</h3></div>
       <table class="members-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>Check In</th>
-            <th>Check Out</th>
-            <th>Duration</th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Duration</th></tr></thead>
         <tbody>
           <?php if (!empty($records)): ?>
-            <?php foreach ($records as $i => $r): 
+            <?php foreach ($records as $i => $r):
               $duration = '-';
               if ($r['check_out']) {
                 $diff = strtotime($r['check_out']) - strtotime($r['check_in']);
@@ -99,14 +81,14 @@ while ($row = mysqli_fetch_assoc($res)) {
             ?>
               <tr>
                 <td><?= $i + 1 ?></td>
-                <td><?= date('Y-m-d', strtotime($r['check_in'])) ?></td>
+                <td><?= date('d-m-Y', strtotime($r['check_in'])) ?></td>
                 <td><?= date('h:i A', strtotime($r['check_in'])) ?></td>
                 <td><?= $r['check_out'] ? date('h:i A', strtotime($r['check_out'])) : '<span style="color:#aaa">Not recorded</span>' ?></td>
                 <td><?= $duration ?></td>
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
-            <tr><td colspan="5" class="text-center" style="color:#aaa; padding:30px;">No attendance records found.</td></tr>
+            <tr><td colspan="5" class="text-center" style="padding:30px; color:#aaa;">No attendance records found.</td></tr>
           <?php endif; ?>
         </tbody>
       </table>

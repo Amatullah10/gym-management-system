@@ -14,8 +14,8 @@ if ($_SESSION['role'] != 'customer') {
 $page = 'bmi';
 
 $email = $_SESSION['email'];
-$member_query = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
-$member = mysqli_fetch_assoc($member_query);
+$member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
+$member = mysqli_fetch_assoc($member_res);
 $member_id = $member['id'] ?? 0;
 
 $success = '';
@@ -26,24 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $bmi = round($weight / (($height / 100) * ($height / 100)), 2);
     $recorded_date = $_POST['recorded_date'];
     $insert = mysqli_query($conn, "INSERT INTO bmi_progress (member_id, height, weight, bmi, recorded_date) VALUES ('$member_id', '$height', '$weight', '$bmi', '$recorded_date')");
-    if ($insert) {
-        $success = "BMI recorded successfully! Your BMI is $bmi";
-    } else {
-        $error = "Something went wrong. Please try again.";
-    }
+    if ($insert) { $success = "BMI calculated and saved! Your BMI is <strong>$bmi</strong>"; }
+    else { $error = "Something went wrong. Please try again."; }
 }
 
 $records = [];
 $res = mysqli_query($conn, "SELECT * FROM bmi_progress WHERE member_id = '$member_id' ORDER BY recorded_date DESC");
-while ($row = mysqli_fetch_assoc($res)) {
-    $records[] = $row;
-}
+while ($row = mysqli_fetch_assoc($res)) { $records[] = $row; }
 
 function getBMICategory($bmi) {
     if ($bmi < 18.5) return ['Underweight', 'orange'];
-    if ($bmi < 25) return ['Normal', 'active'];
-    if ($bmi < 30) return ['Overweight', 'orange'];
-    return ['Obese', 'danger'];
+    if ($bmi < 25)   return ['Normal', 'active'];
+    if ($bmi < 30)   return ['Overweight', 'orange'];
+    return ['Obese', 'expired'];
 }
 ?>
 <!DOCTYPE html>
@@ -57,9 +52,7 @@ function getBMICategory($bmi) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
-  <style>
-    .main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }
-  </style>
+  <style>.main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }</style>
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
@@ -67,25 +60,23 @@ function getBMICategory($bmi) {
   <div class="main-content">
 
     <div class="page-header">
-      <h1 class="page-title">BMI Progress</h1>
-      <p class="page-subtitle">Track your Body Mass Index</p>
+      <div>
+        <h1 class="page-title">BMI Progress</h1>
+        <p class="page-subtitle">Track your Body Mass Index</p>
+      </div>
     </div>
 
-    <?php if ($success): ?>
-      <div class="app-alert app-alert-success"><i class="fa-solid fa-circle-check"></i> <?= $success ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-      <div class="app-alert app-alert-error"><i class="fa-solid fa-circle-xmark"></i> <?= $error ?></div>
-    <?php endif; ?>
+    <?php if ($success): ?><div class="app-alert app-alert-success"><i class="fa-solid fa-circle-check"></i> <?= $success ?></div><?php endif; ?>
+    <?php if ($error): ?><div class="app-alert app-alert-error"><i class="fa-solid fa-circle-xmark"></i> <?= $error ?></div><?php endif; ?>
 
-    <!-- BMI Info Cards -->
-    <div class="stats-grid mb-4">
+    <!-- BMI Range Reference Cards -->
+    <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-weight-scale"></i></div>
+        <div class="stat-icon orange"><i class="fa-solid fa-arrow-down"></i></div>
         <div class="stat-info"><h3>&lt; 18.5</h3><p>Underweight</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon active"><i class="fa-solid fa-check-circle"></i></div>
+        <div class="stat-icon green"><i class="fa-solid fa-check"></i></div>
         <div class="stat-info"><h3>18.5 - 24.9</h3><p>Normal</p></div>
       </div>
       <div class="stat-card">
@@ -93,51 +84,27 @@ function getBMICategory($bmi) {
         <div class="stat-info"><h3>25 - 29.9</h3><p>Overweight</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon danger"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div class="stat-icon red"><i class="fa-solid fa-circle-exclamation"></i></div>
         <div class="stat-info"><h3>&gt; 30</h3><p>Obese</p></div>
       </div>
     </div>
 
-    <!-- Add BMI Form -->
-    <div class="form-container mb-4">
-      <h3 style="margin-bottom:20px; color:#1a1a1a;">Calculate & Record BMI</h3>
+    <div class="form-container">
+      <h3 style="margin-bottom:20px; font-size:18px; font-weight:600;">Calculate & Record BMI</h3>
       <form method="POST">
         <div class="form-row">
-          <div>
-            <label>Height (cm)</label>
-            <input type="number" name="height" step="0.1" placeholder="e.g. 170" required>
-          </div>
-          <div>
-            <label>Weight (kg)</label>
-            <input type="number" name="weight" step="0.1" placeholder="e.g. 70" required>
-          </div>
-          <div>
-            <label>Date</label>
-            <input type="date" name="recorded_date" value="<?= date('Y-m-d') ?>" required>
-          </div>
+          <div><label>Height (cm)</label><input type="number" name="height" step="0.1" placeholder="e.g. 170" required></div>
+          <div><label>Weight (kg)</label><input type="number" name="weight" step="0.1" placeholder="e.g. 70" required></div>
+          <div><label>Date</label><input type="date" name="recorded_date" value="<?= date('Y-m-d') ?>" required></div>
         </div>
-        <button type="submit" class="btn app-btn-primary mt-10">
-          <i class="fa-solid fa-calculator"></i> Calculate & Save
-        </button>
+        <button type="submit" class="app-btn-primary" style="margin-top:15px;"><i class="fa-solid fa-calculator"></i> Calculate & Save BMI</button>
       </form>
     </div>
 
-    <!-- BMI Records Table -->
     <div class="members-table-container">
-      <div class="table-header">
-        <h3>BMI History</h3>
-      </div>
+      <div class="table-header"><h3>BMI History</h3></div>
       <table class="members-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Height (cm)</th>
-            <th>Weight (kg)</th>
-            <th>BMI</th>
-            <th>Category</th>
-            <th>Date</th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Height (cm)</th><th>Weight (kg)</th><th>BMI</th><th>Category</th><th>Date</th></tr></thead>
         <tbody>
           <?php if (!empty($records)): ?>
             <?php foreach ($records as $i => $r):
@@ -153,7 +120,7 @@ function getBMICategory($bmi) {
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
-            <tr><td colspan="6" class="text-center" style="color:#aaa; padding:30px;">No records found. Calculate your first BMI!</td></tr>
+            <tr><td colspan="6" class="text-center" style="padding:30px; color:#aaa;">No BMI records yet. Calculate your first BMI above!</td></tr>
           <?php endif; ?>
         </tbody>
       </table>

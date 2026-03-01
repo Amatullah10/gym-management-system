@@ -14,21 +14,16 @@ if ($_SESSION['role'] != 'customer') {
 $page = 'payment-history';
 
 $email = $_SESSION['email'];
-$member_query = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
-$member = mysqli_fetch_assoc($member_query);
+$member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
+$member = mysqli_fetch_assoc($member_res);
 $member_id = $member['id'] ?? 0;
 
 $records = [];
 $res = mysqli_query($conn, "SELECT * FROM payments WHERE member_id = '$member_id' ORDER BY payment_date DESC");
-while ($row = mysqli_fetch_assoc($res)) {
-    $records[] = $row;
-}
+while ($row = mysqli_fetch_assoc($res)) { $records[] = $row; }
 
-$total_paid = 0;
 $res2 = mysqli_query($conn, "SELECT SUM(amount) as total FROM payments WHERE member_id = '$member_id' AND status = 'paid'");
 $total_paid = mysqli_fetch_assoc($res2)['total'] ?? 0;
-
-$total_payments = count($records);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,9 +36,7 @@ $total_payments = count($records);
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
-  <style>
-    .main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }
-  </style>
+  <style>.main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }</style>
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
@@ -51,15 +44,16 @@ $total_payments = count($records);
   <div class="main-content">
 
     <div class="page-header">
-      <h1 class="page-title">Payment History</h1>
-      <p class="page-subtitle">All your payment records</p>
+      <div>
+        <h1 class="page-title">Payment History</h1>
+        <p class="page-subtitle">All your payment records</p>
+      </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-receipt"></i></div>
-        <div class="stat-info"><h3><?= $total_payments ?></h3><p>Total Payments</p></div>
+        <div class="stat-info"><h3><?= count($records) ?></h3><p>Total Payments</p></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
@@ -67,42 +61,27 @@ $total_payments = count($records);
       </div>
     </div>
 
-    <!-- Payment History Table -->
     <div class="members-table-container">
-      <div class="table-header">
-        <h3>All Payments</h3>
-      </div>
+      <div class="table-header"><h3>All Payments</h3></div>
       <table class="members-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Amount</th>
-            <th>Payment Date</th>
-            <th>Due Date</th>
-            <th>Method</th>
-            <th>Notes</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Amount</th><th>Payment Date</th><th>Due Date</th><th>Method</th><th>Notes</th><th>Status</th></tr></thead>
         <tbody>
           <?php if (!empty($records)): ?>
-            <?php foreach ($records as $i => $r): ?>
+            <?php foreach ($records as $i => $r):
+              $badge = $r['status'] == 'paid' ? 'active' : ($r['status'] == 'overdue' ? 'expired' : 'pending');
+            ?>
               <tr>
                 <td><?= $i + 1 ?></td>
                 <td><strong>₹<?= number_format($r['amount'], 2) ?></strong></td>
                 <td><?= $r['payment_date'] ?: '-' ?></td>
                 <td><?= $r['due_date'] ?></td>
                 <td><?= $r['payment_method'] ?: '-' ?></td>
-                <td><?= $r['notes'] ?: '-' ?></td>
-                <td>
-                  <span class="status-badge <?= $r['status'] == 'paid' ? 'active' : ($r['status'] == 'overdue' ? 'expired' : 'pending') ?>">
-                    <?= strtoupper($r['status']) ?>
-                  </span>
-                </td>
+                <td><?= htmlspecialchars($r['notes']) ?: '-' ?></td>
+                <td><span class="status-badge <?= $badge ?>"><?= strtoupper($r['status']) ?></span></td>
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
-            <tr><td colspan="7" class="text-center" style="color:#aaa; padding:30px;">No payment records found.</td></tr>
+            <tr><td colspan="7" class="text-center" style="padding:30px; color:#aaa;">No payment records found.</td></tr>
           <?php endif; ?>
         </tbody>
       </table>
