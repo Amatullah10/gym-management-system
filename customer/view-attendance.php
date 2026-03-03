@@ -2,21 +2,18 @@
 session_start();
 require_once '../dbcon.php';
 
-if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
-    header("Location: ../index.php");
-    exit();
-}
-if ($_SESSION['role'] != 'customer') {
-    header("Location: ../index.php");
-    exit();
-}
+if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
+if ($_SESSION['role'] != 'customer') { header("Location: ../index.php"); exit(); }
 
 $page = 'view-attendance';
-
 $email = $_SESSION['email'];
+
 $member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
 $member = mysqli_fetch_assoc($member_res);
-$member_id = $member['id'] ?? 0;
+if (!$member) {
+    die("<div style='font-family:Inter,sans-serif; padding:40px; color:#d32f2f;'><h3>Account Error</h3><p>No member profile found for: <strong>$email</strong>. Please contact the receptionist.</p><a href='../auth/logout.php'>Logout</a></div>");
+}
+$member_id = $member['id'];
 
 $res = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM attendance WHERE member_id = '$member_id'");
 $total_attendance = mysqli_fetch_assoc($res)['cnt'];
@@ -28,21 +25,9 @@ $records = [];
 $res3 = mysqli_query($conn, "SELECT * FROM attendance WHERE member_id = '$member_id' ORDER BY check_in DESC");
 while ($row = mysqli_fetch_assoc($res3)) { $records[] = $row; }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>View Attendance - FitnessPro</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="sidebar.css">
-  <link rel="stylesheet" href="../css/common.css">
-  <style>.main-wrapper { margin-top: 0 !important; padding-top: 0 !important; }</style>
-</head>
-<body>
+<?php include '../layout/header.php'; ?>
 <?php include 'sidebar.php'; ?>
+
 <div class="main-wrapper">
   <div class="main-content">
 
@@ -54,14 +39,8 @@ while ($row = mysqli_fetch_assoc($res3)) { $records[] = $row; }
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="fa-solid fa-calendar-check"></i></div>
-        <div class="stat-info"><h3><?= $total_attendance ?></h3><p>Total Attendance</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-calendar-days"></i></div>
-        <div class="stat-info"><h3><?= $this_month ?></h3><p>This Month</p></div>
-      </div>
+      <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-calendar-check"></i></div><div class="stat-info"><h3><?= $total_attendance ?></h3><p>Total Attendance</p></div></div>
+      <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-calendar-days"></i></div><div class="stat-info"><h3><?= $this_month ?></h3><p>This Month</p></div></div>
     </div>
 
     <div class="members-table-container">
@@ -74,18 +53,10 @@ while ($row = mysqli_fetch_assoc($res3)) { $records[] = $row; }
               $duration = '-';
               if ($r['check_out']) {
                 $diff = strtotime($r['check_out']) - strtotime($r['check_in']);
-                $hours = floor($diff / 3600);
-                $mins = floor(($diff % 3600) / 60);
-                $duration = $hours.'h '.$mins.'m';
+                $duration = floor($diff/3600).'h '.floor(($diff%3600)/60).'m';
               }
             ?>
-              <tr>
-                <td><?= $i + 1 ?></td>
-                <td><?= date('d-m-Y', strtotime($r['check_in'])) ?></td>
-                <td><?= date('h:i A', strtotime($r['check_in'])) ?></td>
-                <td><?= $r['check_out'] ? date('h:i A', strtotime($r['check_out'])) : '<span style="color:#aaa">Not recorded</span>' ?></td>
-                <td><?= $duration ?></td>
-              </tr>
+              <tr><td><?= $i+1 ?></td><td><?= date('d-m-Y', strtotime($r['check_in'])) ?></td><td><?= date('h:i A', strtotime($r['check_in'])) ?></td><td><?= $r['check_out'] ? date('h:i A', strtotime($r['check_out'])) : '<span style="color:#aaa">Not recorded</span>' ?></td><td><?= $duration ?></td></tr>
             <?php endforeach; ?>
           <?php else: ?>
             <tr><td colspan="5" class="text-center" style="padding:30px; color:#aaa;">No attendance records found.</td></tr>

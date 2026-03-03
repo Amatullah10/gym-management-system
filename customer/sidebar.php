@@ -24,7 +24,8 @@
 
       <!-- My Progress Dropdown -->
       <li class="submenu">
-        <input type="checkbox" id="my-progress" class="toggle-input">
+        <input type="checkbox" id="my-progress" class="toggle-input"
+          <?php if(in_array($page, ['weight','bmi','fitness'])) echo 'checked'; ?>>
         <label for="my-progress" class="submenu-label">
           <i class="fas fa-chart-line"></i><span>My Progress</span>
         </label>
@@ -43,7 +44,8 @@
 
       <!-- Attendance Dropdown -->
       <li class="submenu">
-        <input type="checkbox" id="attendance-menu" class="toggle-input">
+        <input type="checkbox" id="attendance-menu" class="toggle-input"
+          <?php if(in_array($page, ['view-attendance','attendance-report'])) echo 'checked'; ?>>
         <label for="attendance-menu" class="submenu-label">
           <i class="fas fa-calendar-check"></i><span>Attendance</span>
         </label>
@@ -59,7 +61,8 @@
 
       <!-- Payments Dropdown -->
       <li class="submenu">
-        <input type="checkbox" id="payments" class="toggle-input">
+        <input type="checkbox" id="payments" class="toggle-input"
+          <?php if(in_array($page, ['due-payments','overdue-payments','payment-history','payment-reminders'])) echo 'checked'; ?>>
         <label for="payments" class="submenu-label">
           <i class="fas fa-money-bill-wave"></i><span>Payments</span>
         </label>
@@ -77,6 +80,11 @@
             <a href="payment-reminders.php"><i class="fas fa-arrow-right"></i> Payment Reminders</a>
           </li>
         </ul>
+      </li>
+
+      <!-- Announcements -->
+      <li class="<?php if($page=='announcements'){ echo 'active'; }?>">
+        <a href="announcements.php"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
       </li>
 
     </ul>
