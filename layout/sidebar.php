@@ -201,8 +201,8 @@ $user_menu = $menus[$user_role] ?? [];
           <i class="fas fa-credit-card"></i><span>Payments</span>
         </label>
         <ul class="submenu-items">
-          <li class="<?php if($page=='payment-list') echo 'active'; ?>">
-            <a href="<?= $base ?>payment-list.php">
+          <li class="<?php if($page=='payments') echo 'active'; ?>">
+            <a href="<?= $base ?>payments.php">
               <i class="fas fa-arrow-right"></i> All Payment Records
             </a>
           </li>
