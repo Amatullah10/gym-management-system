@@ -20,6 +20,9 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
+  <style>
+  .main-wrapper { margin-top: 70px !important; }
+</style>
 </head>
 <body>
 
