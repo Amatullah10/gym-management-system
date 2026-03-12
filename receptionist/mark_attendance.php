@@ -5,24 +5,50 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'receptionist') { header("Location: ../index.php"); exit(); }
 
-$page = 'dashboard';
-
-// Stats
-$total_members   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members"))['t'];
-$active_members  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_status = 'Active'"))['t'];
-$expired_members = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_status = 'Expired'"))['t'];
+$page = 'mark-attendance';
+$success = '';
+$error = '';
 $today = date('Y-m-d');
-$today_attendance = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE DATE(check_in) = '$today'"))['t'];
 
-// Recent members
-$recent_members = [];
-$res = mysqli_query($conn, "SELECT * FROM members ORDER BY created_at DESC LIMIT 5");
-while ($row = mysqli_fetch_assoc($res)) { $recent_members[] = $row; }
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
+    $member_id = $_POST['member_id'];
+    $action    = $_POST['action'];
 
-// Today's attendance list
+    if ($action == 'checkin') {
+        $check = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND DATE(check_in) = '$today'");
+        if (mysqli_num_rows($check) > 0) {
+            $error = "This member has already checked in today!";
+        } else {
+            $now    = date('Y-m-d H:i:s');
+            $insert = mysqli_query($conn, "INSERT INTO attendance (member_id, check_in) VALUES ('$member_id', '$now')");
+            if ($insert) { $success = "Check-in recorded successfully!"; }
+            else { $error = "Failed to record check-in. " . mysqli_error($conn); }
+        }
+    } elseif ($action == 'checkout') {
+        $att = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND DATE(check_in) = '$today' AND check_out IS NULL");
+        if (mysqli_num_rows($att) == 0) {
+            $error = "No active check-in found for this member today!";
+        } else {
+            $att_row = mysqli_fetch_assoc($att);
+            $now     = date('Y-m-d H:i:s');
+            $update  = mysqli_query($conn, "UPDATE attendance SET check_out = '$now' WHERE id = '{$att_row['id']}'");
+            if ($update) { $success = "Check-out recorded successfully!"; }
+            else { $error = "Failed to record check-out. " . mysqli_error($conn); }
+        }
+    }
+}
+
+$members = [];
+$res = mysqli_query($conn, "SELECT id, full_name, email FROM members ORDER BY full_name ASC");
+while ($row = mysqli_fetch_assoc($res)) { $members[] = $row; }
+
 $today_list = [];
-$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE DATE(a.check_in) = '$today' ORDER BY a.check_in DESC LIMIT 6");
+$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE DATE(a.check_in) = '$today' ORDER BY a.check_in DESC");
 while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
+
+$total_checkedin  = count($today_list);
+$total_checkedout = count(array_filter($today_list, fn($a) => $a['check_out']));
+$total_present    = $total_checkedin - $total_checkedout;
 ?>
 <?php include '../layout/header.php'; ?>
 <?php include 'sidebar.php'; ?>
@@ -32,86 +58,66 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Receptionist Dashboard</h1>
-        <p class="page-subtitle">Welcome back! Here's your overview for today — <?= date('d M Y') ?></p>
+        <h1 class="page-title">Mark Attendance</h1>
+        <p class="page-subtitle">Record member check-in and check-out — <?= date('d M Y') ?></p>
       </div>
     </div>
+
+    <?php if ($success): ?>
+      <div class="app-alert app-alert-success"><i class="fa-solid fa-circle-check"></i> <?= $success ?></div>
+    <?php endif; ?>
+    <?php if ($error): ?>
+      <div class="app-alert app-alert-error"><i class="fa-solid fa-circle-xmark"></i> <?= $error ?></div>
+    <?php endif; ?>
 
     <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon red"><i class="fa-solid fa-users"></i></div>
-        <div class="stat-info"><h3><?= $total_members ?></h3><p>Total Members</p></div>
+        <div class="stat-icon green"><i class="fa-solid fa-right-to-bracket"></i></div>
+        <div class="stat-info"><h3><?= $total_checkedin ?></h3><p>Total Check-ins</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-user-check"></i></div>
-        <div class="stat-info"><h3><?= $active_members ?></h3><p>Active Members</p></div>
+        <div class="stat-icon orange"><i class="fa-solid fa-person-walking"></i></div>
+        <div class="stat-info"><h3><?= $total_present ?></h3><p>Still Inside</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon orange"><i class="fa-solid fa-user-clock"></i></div>
-        <div class="stat-info"><h3><?= $expired_members ?></h3><p>Expired Members</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-calendar-check"></i></div>
-        <div class="stat-info"><h3><?= $today_attendance ?></h3><p>Today's Attendance</p></div>
+        <div class="stat-icon red"><i class="fa-solid fa-right-from-bracket"></i></div>
+        <div class="stat-info"><h3><?= $total_checkedout ?></h3><p>Checked Out</p></div>
       </div>
     </div>
 
-    <!-- Recent Members Table -->
-    <div class="members-table-container mb-20">
-      <div class="table-header flex justify-between align-center">
-        <h3>Recently Registered Members</h3>
-        <a href="member_lookup.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
-      </div>
-      <table class="members-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Phone</th>
-            <th>Plan</th>
-            <th>Start Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if (!empty($recent_members)): ?>
-            <?php foreach ($recent_members as $m):
-              $initial   = strtoupper(substr($m['full_name'], 0, 1));
-              $plan_type = strtolower(explode(' - ', $m['membership_type'])[0]);
-              $days_left = round((strtotime($m['end_date']) - strtotime(date('Y-m-d'))) / 86400);
-              if ($days_left < 0) { $status = 'expired'; $status_text = 'EXPIRED'; }
-              elseif ($days_left <= 30) { $status = 'inactive'; $status_text = 'EXPIRING SOON'; }
-              else { $status = 'active'; $status_text = 'ACTIVE'; }
-            ?>
-            <tr>
-              <td>
-                <div class="member-cell">
-                  <div class="member-avatar"><?= $initial ?></div>
-                  <div class="member-info">
-                    <span class="name"><?= htmlspecialchars($m['full_name']) ?></span>
-                    <span class="joined"><?= htmlspecialchars($m['email']) ?></span>
-                  </div>
-                </div>
-              </td>
-              <td><?= htmlspecialchars($m['phone']) ?></td>
-              <td><span class="plan-badge <?= $plan_type ?>"><?= htmlspecialchars($m['membership_type']) ?></span></td>
-              <td class="date-display"><?= $m['start_date'] ?></td>
-              <td><span class="status-badge <?= $status ?>"><?= $status_text ?></span></td>
-            </tr>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <tr><td colspan="5" class="text-center" style="padding:20px; color:#aaa;">No members found.</td></tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
+    <!-- Check In / Out Form -->
+    <div class="form-container mb-20">
+      <h3 style="font-size:18px; font-weight:600; margin-bottom:20px; margin-top:0;">Record Attendance</h3>
+      <form method="POST">
+        <div class="form-row">
+          <div>
+            <label>Select Member</label>
+            <select name="member_id" required>
+              <option value="">-- Select Member --</option>
+              <?php foreach ($members as $m): ?>
+                <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['full_name']) ?> (<?= htmlspecialchars($m['email']) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-3 mt-10">
+          <button type="submit" name="action" value="checkin" class="btn app-btn-primary">
+            <i class="fa-solid fa-right-to-bracket"></i> Check In
+          </button>
+          <button type="submit" name="action" value="checkout" class="btn app-btn-secondary">
+            <i class="fa-solid fa-right-from-bracket"></i> Check Out
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- Today's Attendance Cards -->
+    <!-- Today's Attendance -->
     <div class="members-table-container">
       <div class="table-header flex justify-between align-center">
         <h3>
           Today's Attendance
-          <span class="app-badge app-badge-warning" style="margin-left:8px;"><?= $today_attendance ?> members</span>
+          <span class="app-badge app-badge-warning" style="margin-left:8px;"><?= $total_checkedin ?> members</span>
         </h3>
         <a href="view_attendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
@@ -130,6 +136,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
           ?>
           <div class="stat-card" style="flex-direction:column; align-items:stretch; gap:12px; border-left:4px solid <?= $is_out ? 'var(--success-color)' : 'var(--warning-color)' ?>;">
 
+            <!-- Member Info -->
             <div class="member-cell">
               <div class="member-avatar"><?= $initial ?></div>
               <div class="member-info" style="flex:1;">
@@ -141,6 +148,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
               </span>
             </div>
 
+            <!-- Time Info -->
             <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr; gap:8px; margin:0;">
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-right-to-bracket" style="color:var(--success-color);"></i> In</p>
@@ -164,9 +172,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
         <div class="text-center" style="padding:50px 20px;">
           <i class="fa-solid fa-calendar-xmark" style="font-size:45px; margin-bottom:15px; display:block; color:#ddd;"></i>
           <p style="font-size:15px; font-weight:500; color:#aaa;">No attendance recorded today yet.</p>
-          <a href="mark_attendance.php" style="color:var(--active-color); font-size:14px; text-decoration:none;">
-            <i class="fa-solid fa-plus"></i> Mark Attendance Now
-          </a>
+          <p style="font-size:13px; color:#ccc;">Select a member above and click Check In to get started.</p>
         </div>
       <?php endif; ?>
 
