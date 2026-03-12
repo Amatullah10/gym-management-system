@@ -15,23 +15,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $action    = $_POST['action'];
 
     if ($action == 'checkin') {
-        $check = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND DATE(check_in) = '$today'");
+        $check = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND attendance_date = '$today'");
         if (mysqli_num_rows($check) > 0) {
             $error = "This member has already checked in today!";
         } else {
-            $now    = date('Y-m-d H:i:s');
-            $insert = mysqli_query($conn, "INSERT INTO attendance (member_id, check_in) VALUES ('$member_id', '$now')");
+            $now    = date('H:i:s');
+            $insert = mysqli_query($conn, "INSERT INTO attendance (member_id, attendance_date, status, check_in_time) VALUES ('$member_id', '$today', 'Present', '$now')");
             if ($insert) { $success = "Check-in recorded successfully!"; }
             else { $error = "Failed to record check-in. " . mysqli_error($conn); }
         }
     } elseif ($action == 'checkout') {
-        $att = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND DATE(check_in) = '$today' AND check_out IS NULL");
+        $att = mysqli_query($conn, "SELECT id FROM attendance WHERE member_id = '$member_id' AND attendance_date = '$today' AND check_out_time IS NULL AND status = 'Present'");
         if (mysqli_num_rows($att) == 0) {
             $error = "No active check-in found for this member today!";
         } else {
             $att_row = mysqli_fetch_assoc($att);
-            $now     = date('Y-m-d H:i:s');
-            $update  = mysqli_query($conn, "UPDATE attendance SET check_out = '$now' WHERE id = '{$att_row['id']}'");
+            $now     = date('H:i:s');
+            $update  = mysqli_query($conn, "UPDATE attendance SET check_out_time = '$now' WHERE id = '{$att_row['id']}'");
             if ($update) { $success = "Check-out recorded successfully!"; }
             else { $error = "Failed to record check-out. " . mysqli_error($conn); }
         }
@@ -43,11 +43,11 @@ $res = mysqli_query($conn, "SELECT id, full_name, email FROM members ORDER BY fu
 while ($row = mysqli_fetch_assoc($res)) { $members[] = $row; }
 
 $today_list = [];
-$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE DATE(a.check_in) = '$today' ORDER BY a.check_in DESC");
+$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE a.attendance_date = '$today' ORDER BY a.check_in_time DESC");
 while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
 
 $total_checkedin  = count($today_list);
-$total_checkedout = count(array_filter($today_list, fn($a) => $a['check_out']));
+$total_checkedout = count(array_filter($today_list, fn($a) => $a['check_out_time']));
 $total_present    = $total_checkedin - $total_checkedout;
 ?>
 <?php include '../layout/header.php'; ?>
@@ -125,14 +125,17 @@ $total_present    = $total_checkedin - $total_checkedout;
       <?php if (!empty($today_list)): ?>
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:20px;">
           <?php foreach ($today_list as $a):
-            $check_out = isset($a['check_out']) ? $a['check_out'] : null;
+            $check_in_time  = isset($a['check_in_time']) ? $a['check_in_time'] : null;
+            $check_out_time = isset($a['check_out_time']) && $a['check_out_time'] ? $a['check_out_time'] : null;
             $duration  = '-';
-            if ($check_out) {
-              $diff     = strtotime($check_out) - strtotime($a['check_in']);
+            if ($check_out_time && $check_in_time) {
+              $check_in_dt  = strtotime($a['attendance_date'] . ' ' . $check_in_time);
+              $check_out_dt = strtotime($a['attendance_date'] . ' ' . $check_out_time);
+              $diff     = $check_out_dt - $check_in_dt;
               $duration = floor($diff/3600).'h '.floor(($diff%3600)/60).'m';
             }
             $initial = strtoupper(substr($a['full_name'], 0, 1));
-            $is_out  = !empty($check_out) ? true : false;
+            $is_out  = !empty($check_out_time) ? true : false;
           ?>
           <div class="stat-card" style="flex-direction:column; align-items:stretch; gap:12px; border-left:4px solid <?= $is_out ? 'var(--success-color)' : 'var(--warning-color)' ?>;">
 
@@ -152,11 +155,15 @@ $total_present    = $total_checkedin - $total_checkedout;
             <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr; gap:8px; margin:0;">
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-right-to-bracket" style="color:var(--success-color);"></i> In</p>
-                <p style="font-size:13px; font-weight:600; color:#1a1a1a; margin:0;"><?= date('h:i A', strtotime($a['check_in'])) ?></p>
+                <p style="font-size:13px; font-weight:600; color:#1a1a1a; margin:0;">
+                  <?= $check_in_time ? date('h:i A', strtotime($check_in_time)) : '—' ?>
+                </p>
               </div>
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-right-from-bracket" style="color:var(--danger-color);"></i> Out</p>
-                <p style="font-size:13px; font-weight:600; color:<?= $is_out ? '#1a1a1a' : '#ccc' ?>; margin:0;"><?= $is_out ? date('h:i A', strtotime($check_out)) : '—' ?></p>
+                <p style="font-size:13px; font-weight:600; color:<?= $is_out ? '#1a1a1a' : '#ccc' ?>; margin:0;">
+                  <?= $is_out ? date('h:i A', strtotime($check_out_time)) : '—' ?>
+                </p>
               </div>
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-clock" style="color:#2196f3;"></i> Time</p>

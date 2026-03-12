@@ -9,7 +9,7 @@ $page = 'announcements';
 
 // Fetch announcements
 $announcements = [];
-$res = mysqli_query($conn, "SELECT * FROM announcements ORDER BY date DESC");
+$res = mysqli_query($conn, "SELECT * FROM announcements ORDER BY created_at DESC");
 while ($row = mysqli_fetch_assoc($res)) { $announcements[] = $row; }
 
 $total = count($announcements);
@@ -37,33 +37,20 @@ $total = count($announcements);
 
     <!-- Announcements List -->
     <?php if (!empty($announcements)): ?>
-      <?php foreach ($announcements as $a):
-        // Audience badge color
-        $audience = isset($a['target_audience']) ? $a['target_audience'] : 'All';
-        if ($audience == 'All') {
-            $badge_class = 'active';
-        } elseif ($audience == 'Members') {
-            $badge_class = 'inactive';
-        } else {
-            $badge_class = 'pending';
-        }
-      ?>
+      <?php foreach ($announcements as $a): ?>
       <div class="members-table-container" style="margin-bottom:15px;">
         <div class="table-header flex justify-between align-center">
           <div>
             <h3 style="margin:0; font-size:17px;"><?= htmlspecialchars($a['title']) ?></h3>
             <p class="page-subtitle" style="margin-top:5px;">
               <i class="fa-solid fa-calendar" style="color:var(--active-color);"></i>
-              <?= date('d M Y', strtotime($a['date'])) ?>
+              <?= date('d M Y', strtotime($a['created_at'])) ?>
             </p>
           </div>
-          <span class="status-badge <?= $badge_class ?>">
-            <i class="fa-solid fa-users"></i> <?= htmlspecialchars($audience) ?>
-          </span>
         </div>
         <div style="padding:20px 25px;">
           <p style="margin:0; font-size:14px; color:#555; line-height:1.7;">
-            <?= nl2br(htmlspecialchars($a['description'])) ?>
+            <?= nl2br(htmlspecialchars($a['message'])) ?>
           </p>
         </div>
       </div>

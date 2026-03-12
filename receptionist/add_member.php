@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if ($insert_member) {
             // Step 2: Insert into users table
-            $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '$password')");
+            $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('', '$email', '$password')");
             if ($insert_user) {
                 $success = "Member registered successfully!<br>
                     <strong>Login Email:</strong> $email<br>

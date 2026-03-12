@@ -40,7 +40,7 @@ $insert_member = mysqli_query($conn, "INSERT INTO members
 
 if ($insert_member) {
     // Step 2: Insert into users table
-    $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '$password')");
+    $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('', '$email', '$password')");
 
     if ($insert_user) {
         header("Location: add_member.php?success=1&email=" . urlencode($email) . "&password=" . urlencode($password));

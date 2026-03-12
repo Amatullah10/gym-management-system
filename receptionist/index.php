@@ -12,20 +12,43 @@ $total_members   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t 
 $active_members  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_status = 'Active'"))['t'];
 $expired_members = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_status = 'Expired'"))['t'];
 $today = date('Y-m-d');
-$today_attendance = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE DATE(check_in) = '$today'"))['t'];
+
+// FIXED: Use attendance_date and status columns
+$today_attendance = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE attendance_date = '$today' AND status = 'Present'"))['t'];
 
 // Recent members
 $recent_members = [];
 $res = mysqli_query($conn, "SELECT * FROM members ORDER BY created_at DESC LIMIT 5");
 while ($row = mysqli_fetch_assoc($res)) { $recent_members[] = $row; }
 
-// Today's attendance list
+// FIXED: Today's attendance list - use attendance_date, check_in_time, check_out_time
 $today_list = [];
-$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE DATE(a.check_in) = '$today' ORDER BY a.check_in DESC LIMIT 6");
+$res2 = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id WHERE a.attendance_date = '$today' AND a.status = 'Present' ORDER BY a.check_in_time DESC LIMIT 6");
 while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receptionist Dashboard - Gym Management</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">
@@ -61,7 +84,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
     <div class="members-table-container mb-20">
       <div class="table-header flex justify-between align-center">
         <h3>Recently Registered Members</h3>
-        <a href="member_lookup.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="members.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
       <table class="members-table">
         <thead>
@@ -113,20 +136,27 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
           Today's Attendance
           <span class="app-badge app-badge-warning" style="margin-left:8px;"><?= $today_attendance ?> members</span>
         </h3>
-        <a href="view_attendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="view-attendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
 
       <?php if (!empty($today_list)): ?>
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px; padding:20px;">
           <?php foreach ($today_list as $a):
-            $check_out = isset($a['check_out']) ? $a['check_out'] : null;
-            $duration  = '-';
-            if ($check_out) {
-              $diff     = strtotime($check_out) - strtotime($a['check_in']);
+            // FIXED: Use check_in_time and check_out_time (TIME columns)
+            $check_in_time  = isset($a['check_in_time']) ? $a['check_in_time'] : null;
+            $check_out_time = isset($a['check_out_time']) && $a['check_out_time'] ? $a['check_out_time'] : null;
+            
+            $duration = '-';
+            if ($check_out_time && $check_in_time) {
+              // Calculate duration from TIME fields
+              $check_in_dt  = strtotime($a['attendance_date'] . ' ' . $check_in_time);
+              $check_out_dt = strtotime($a['attendance_date'] . ' ' . $check_out_time);
+              $diff = $check_out_dt - $check_in_dt;
               $duration = floor($diff/3600).'h '.floor(($diff%3600)/60).'m';
             }
+            
             $initial = strtoupper(substr($a['full_name'], 0, 1));
-            $is_out  = !empty($check_out) ? true : false;
+            $is_out  = !empty($check_out_time) ? true : false;
           ?>
           <div class="stat-card" style="flex-direction:column; align-items:stretch; gap:12px; border-left:4px solid <?= $is_out ? 'var(--success-color)' : 'var(--warning-color)' ?>;">
 
@@ -144,11 +174,15 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
             <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr; gap:8px; margin:0;">
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-right-to-bracket" style="color:var(--success-color);"></i> In</p>
-                <p style="font-size:13px; font-weight:600; color:#1a1a1a; margin:0;"><?= date('h:i A', strtotime($a['check_in'])) ?></p>
+                <p style="font-size:13px; font-weight:600; color:#1a1a1a; margin:0;">
+                  <?= $check_in_time ? date('h:i A', strtotime($check_in_time)) : '—' ?>
+                </p>
               </div>
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-right-from-bracket" style="color:var(--danger-color);"></i> Out</p>
-                <p style="font-size:13px; font-weight:600; color:<?= $is_out ? '#1a1a1a' : '#ccc' ?>; margin:0;"><?= $is_out ? date('h:i A', strtotime($check_out)) : '—' ?></p>
+                <p style="font-size:13px; font-weight:600; color:<?= $is_out ? '#1a1a1a' : '#ccc' ?>; margin:0;">
+                  <?= $is_out ? date('h:i A', strtotime($check_out_time)) : '—' ?>
+                </p>
               </div>
               <div class="app-card" style="padding:8px; text-align:center; box-shadow:none; background:#f8f9fa; border-radius:var(--radius-md);">
                 <p style="font-size:10px; color:#aaa; margin-bottom:3px;"><i class="fa-solid fa-clock" style="color:#2196f3;"></i> Time</p>
@@ -164,7 +198,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
         <div class="text-center" style="padding:50px 20px;">
           <i class="fa-solid fa-calendar-xmark" style="font-size:45px; margin-bottom:15px; display:block; color:#ddd;"></i>
           <p style="font-size:15px; font-weight:500; color:#aaa;">No attendance recorded today yet.</p>
-          <a href="mark_attendance.php" style="color:var(--active-color); font-size:14px; text-decoration:none;">
+          <a href="mark-attendance.php" style="color:var(--active-color); font-size:14px; text-decoration:none;">
             <i class="fa-solid fa-plus"></i> Mark Attendance Now
           </a>
         </div>

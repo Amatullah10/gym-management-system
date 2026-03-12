@@ -11,17 +11,17 @@ $today = date('Y-m-d');
 $filter_date   = isset($_GET['date'])   ? $_GET['date']   : $today;
 $filter_member = isset($_GET['member']) ? mysqli_real_escape_string($conn, $_GET['member']) : '';
 
-$where = "WHERE DATE(a.check_in) = '$filter_date'";
+$where = "WHERE a.attendance_date = '$filter_date'";
 if ($filter_member) {
     $where .= " AND (m.full_name LIKE '%$filter_member%' OR m.email LIKE '%$filter_member%')";
 }
 
 $records = [];
-$res = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id $where ORDER BY a.check_in DESC");
+$res = mysqli_query($conn, "SELECT a.*, m.full_name, m.email FROM attendance a JOIN members m ON a.member_id = m.id $where ORDER BY a.check_in_time DESC");
 while ($row = mysqli_fetch_assoc($res)) { $records[] = $row; }
 
-$total_today      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE DATE(check_in) = '$today'"))['t'];
-$total_this_month = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE MONTH(check_in) = MONTH(NOW()) AND YEAR(check_in) = YEAR(NOW())"))['t'];
+$total_today      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE attendance_date = '$today'"))['t'];
+$total_this_month = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE MONTH(attendance_date) = MONTH(NOW()) AND YEAR(attendance_date) = YEAR(NOW())"))['t'];
 $total_all        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance"))['t'];
 ?>
 <?php include '../layout/header.php'; ?>
@@ -93,9 +93,13 @@ $total_all        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t
         <tbody>
           <?php if (!empty($records)): ?>
             <?php foreach ($records as $i => $a):
+              $check_in_time  = isset($a['check_in_time'])  ? $a['check_in_time']  : null;
+              $check_out_time = isset($a['check_out_time']) && $a['check_out_time'] ? $a['check_out_time'] : null;
               $duration = '-';
-              if ($a['check_out']) {
-                $diff = strtotime($a['check_out']) - strtotime($a['check_in']);
+              if ($check_out_time && $check_in_time) {
+                $check_in_dt  = strtotime($a['attendance_date'] . ' ' . $check_in_time);
+                $check_out_dt = strtotime($a['attendance_date'] . ' ' . $check_out_time);
+                $diff = $check_out_dt - $check_in_dt;
                 $duration = floor($diff/3600).'h '.floor(($diff%3600)/60).'m';
               }
               $initial = strtoupper(substr($a['full_name'], 0, 1));
@@ -111,13 +115,13 @@ $total_all        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t
                   </div>
                 </div>
               </td>
-              <td><?= date('d-m-Y', strtotime($a['check_in'])) ?></td>
-              <td><?= date('h:i A', strtotime($a['check_in'])) ?></td>
-              <td><?= $a['check_out'] ? date('h:i A', strtotime($a['check_out'])) : '<span style="color:#aaa">Not recorded</span>' ?></td>
+              <td><?= date('d-m-Y', strtotime($a['attendance_date'])) ?></td>
+              <td><?= $check_in_time ? date('h:i A', strtotime($check_in_time)) : '<span style="color:#aaa">Not recorded</span>' ?></td>
+              <td><?= $check_out_time ? date('h:i A', strtotime($check_out_time)) : '<span style="color:#aaa">Not recorded</span>' ?></td>
               <td><?= $duration ?></td>
               <td>
-                <span class="status-badge <?= $a['check_out'] ? 'active' : 'pending' ?>">
-                  <?= $a['check_out'] ? 'Completed' : 'Present' ?>
+                <span class="status-badge <?= $check_out_time ? 'active' : 'pending' ?>">
+                  <?= $check_out_time ? 'Completed' : 'Present' ?>
                 </span>
               </td>
             </tr>
