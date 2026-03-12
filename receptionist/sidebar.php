@@ -60,7 +60,7 @@
 
       <!-- Announcements -->
       <li class="<?php if($page=='announcements'){ echo 'active'; }?>">
-        <a href="announcements.php">
+        <a href="view_announcements.php">
           <i class="fas fa-bullhorn"></i><span>Announcements</span>
         </a>
       </li>
