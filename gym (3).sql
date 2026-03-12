@@ -377,3 +377,43 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+-- Payments Table
+CREATE TABLE IF NOT EXISTS `payments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_date` datetime NOT NULL DEFAULT current_timestamp(),
+  `service` varchar(100) NOT NULL,
+  `plan` enum('Monthly','Quarterly','Yearly') NOT NULL DEFAULT 'Monthly',
+  `status` enum('Paid','Due','Overdue') NOT NULL DEFAULT 'Paid',
+  `payment_method` enum('Cash','Card','UPI','Online') NOT NULL DEFAULT 'Cash',
+  `transaction_id` varchar(100) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `member_id` (`member_id`),
+  CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Payment Reminders Table
+CREATE TABLE IF NOT EXISTS `payment_reminders` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` int(11) NOT NULL,
+  `type` enum('Due','Overdue','General') NOT NULL DEFAULT 'General',
+  `message` text NOT NULL,
+  `sent_date` datetime NOT NULL DEFAULT current_timestamp(),
+  `sent_by` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `member_id` (`member_id`),
+  CONSTRAINT `payment_reminders_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Sample payment data
+INSERT INTO `payments` (`member_id`, `amount`, `payment_date`, `service`, `plan`, `status`, `payment_method`) VALUES
+(1, 2500.00, '2026-02-24 10:00:00', 'Fitness', 'Monthly', 'Paid', 'Cash'),
+(2, 6000.00, '2026-02-23 11:30:00', 'Fitness + Cardio', 'Quarterly', 'Paid', 'UPI'),
+(3, 2500.00, '2026-02-20 09:00:00', 'Fitness', 'Monthly', 'Paid', 'Card'),
+(4, 12000.00, '2026-02-18 14:00:00', 'Personal Training', 'Yearly', 'Paid', 'Online'),
+(5, 2500.00, '2026-02-15 08:00:00', 'Fitness', 'Monthly', 'Overdue', 'Cash');

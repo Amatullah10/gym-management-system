@@ -202,23 +202,18 @@ $user_menu = $menus[$user_role] ?? [];
         </label>
         <ul class="submenu-items">
           <li class="<?php if($page=='payments') echo 'active'; ?>">
-            <a href="<?= $base ?>payments.php">
+            <a href="../modules/payments.php">
               <i class="fas fa-arrow-right"></i> All Payment Records
             </a>
           </li>
-          <li class="<?php if($page=='payment-add') echo 'active'; ?>">
-            <a href="<?= $base ?>payment-add.php">
+          <li class="<?php if($page=='payment-form') echo 'active'; ?>">
+            <a href="../modules/payment-form.php">
               <i class="fas fa-arrow-right"></i> Add Payment
             </a>
           </li>
-          <li class="<?php if($page=='payment-due') echo 'active'; ?>">
-            <a href="<?= $base ?>payment-due.php">
-              <i class="fas fa-arrow-right"></i> Due Payments
-            </a>
-          </li>
-          <li class="<?php if($page=='payment-report') echo 'active'; ?>">
-            <a href="<?= $base ?>payment-report.php">
-              <i class="fas fa-arrow-right"></i> Payment Reports
+          <li class="<?php if($page=='payment-receipt') echo 'active'; ?>">
+            <a href="../modules/payment-receipt.php">
+              <i class="fas fa-arrow-right"></i> Payment Receipt
             </a>
           </li>
         </ul>
