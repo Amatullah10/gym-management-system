@@ -17,12 +17,45 @@ $email = $_SESSION['email'];
 $member_res = mysqli_query($conn, "SELECT * FROM members WHERE email = '$email'");
 $member = mysqli_fetch_assoc($member_res);
 
+<<<<<<< HEAD
 if (!$member) {
     die("<div style='font-family:Inter,sans-serif; padding:40px; color:#d32f2f;'>
         <h3>Account Error</h3>
         <p>No member profile found for: <strong>$email</strong>. Please contact the receptionist.</p>
         <a href='../auth/logout.php'>Logout</a>
     </div>");
+=======
+// Total Members
+$total_members_query = "SELECT COUNT(*) as total FROM members";
+$total_result = mysqli_query($conn, $total_members_query);
+$total_members = mysqli_fetch_assoc($total_result)['total'];
+
+// Active Members
+$active_members_query = "SELECT COUNT(*) as active FROM members WHERE membership_status = 'Active'";
+$active_result = mysqli_query($conn, $active_members_query);
+$active_members = mysqli_fetch_assoc($active_result)['active'];
+
+// Today's Attendance (FIXED)
+$today = date('Y-m-d');
+$attendance_query = "SELECT COUNT(*) as today FROM attendance WHERE attendance_date = '$today'";
+$attendance_result = mysqli_query($conn, $attendance_query);
+$today_attendance = mysqli_fetch_assoc($attendance_result)['today'];
+
+// Total Staff
+$staff_query = "SELECT COUNT(*) as total FROM users WHERE role != 'customer'";
+$staff_result = mysqli_query($conn, $staff_query);
+$total_staff = mysqli_fetch_assoc($staff_result)['total'];
+
+// Fetch recent members
+$recent_members_query = "SELECT id, full_name, email, phone, start_date, membership_status 
+FROM members 
+ORDER BY id DESC 
+LIMIT 5";
+$recent_result = mysqli_query($conn, $recent_members_query);
+$recent_members = [];
+while($row = mysqli_fetch_assoc($recent_result)) {
+    $recent_members[] = $row;
+>>>>>>> 50046e0 (Customer changes)
 }
 $member_id = $member['id'];
 

@@ -6,9 +6,9 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location:
 if ($_SESSION['role'] != 'customer') { header("Location: ../index.php"); exit(); }
 
 $page = 'weight';
-$email = $_SESSION['email'];
 
-$member_res = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
+$email = $_SESSION['email'];
+$member_res = mysqli_query($conn, "SELECT id, full_name FROM members WHERE email = '$email'");
 $member = mysqli_fetch_assoc($member_res);
 if (!$member) {
     die("<div style='font-family:Inter,sans-serif; padding:40px; color:#d32f2f;'><h3>Account Error</h3><p>No member profile found for: <strong>$email</strong>. Please contact the receptionist.</p><a href='../auth/logout.php'>Logout</a></div>");
@@ -18,8 +18,8 @@ $member_id = $member['id'];
 $success = '';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $weight = $_POST['weight'];
-    $recorded_date = $_POST['recorded_date'];
+    $weight = mysqli_real_escape_string($conn, $_POST['weight']);
+    $recorded_date = mysqli_real_escape_string($conn, $_POST['recorded_date']);
     $notes = mysqli_real_escape_string($conn, $_POST['notes']);
     $insert = mysqli_query($conn, "INSERT INTO weight_progress (member_id, weight, recorded_date, notes) VALUES ('$member_id', '$weight', '$recorded_date', '$notes')");
     if ($insert) { $success = "Weight recorded successfully!"; }
