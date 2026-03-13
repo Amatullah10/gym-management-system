@@ -1,0 +1,172 @@
+<?php
+session_start();
+require_once '../dbcon.php';
+
+if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
+if ($_SESSION['role'] != 'admin') { header("Location: ../index.php"); exit(); }
+
+$page = 'equipment-report';
+$page_title = 'Equipment Reports - Gym Management';
+
+// Summary counts
+$total        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment"))['t'];
+$working      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Working'"))['t'];
+$maintenance  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Maintenance'"))['t'];
+$out_of_order = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Out of Order'"))['t'];
+
+// Total quantity
+$total_qty   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment"))['t'];
+$working_qty = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment WHERE status='Working'"))['t'];
+
+// All equipment for full report
+$all_equipment = [];
+$res = mysqli_query($conn, "SELECT * FROM equipment ORDER BY status ASC, equipment_name ASC");
+while ($row = mysqli_fetch_assoc($res)) { $all_equipment[] = $row; }
+
+// Status breakdown percentages
+$working_pct     = $total > 0 ? round(($working / $total) * 100) : 0;
+$maintenance_pct = $total > 0 ? round(($maintenance / $total) * 100) : 0;
+$out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
+?>
+<?php include '../layout/header.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
+
+<div class="main-wrapper">
+  <div class="main-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Equipment Reports</h1>
+        <p class="page-subtitle">Overview and summary of all gym equipment — <?= date('d M Y') ?></p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon red"><i class="fa-solid fa-dumbbell"></i></div>
+        <div class="stat-info"><h3><?= $total ?></h3><p>Total Equipment Types</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="stat-info"><h3><?= $working ?></h3><p>Working</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+        <div class="stat-info"><h3><?= $maintenance ?></h3><p>Under Maintenance</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="stat-info"><h3><?= $out_of_order ?></h3><p>Out of Order</p></div>
+      </div>
+    </div>
+
+    <!-- Quantity Stats -->
+    <div class="stats-grid" style="margin-bottom:25px;">
+      <div class="stat-card">
+        <div class="stat-icon red"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="stat-info"><h3><?= $total_qty ?? 0 ?></h3><p>Total Units</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="stat-info"><h3><?= $working_qty ?? 0 ?></h3><p>Working Units</p></div>
+      </div>
+    </div>
+
+    <!-- Status Breakdown -->
+    <div class="members-table-container mb-20" style="margin-bottom:25px;">
+      <div class="table-header">
+        <h3>Status Breakdown</h3>
+      </div>
+      <div style="padding:25px;">
+
+        <!-- Working -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:14px; font-weight:600; color:#2e7d32;"><i class="fa-solid fa-circle-check"></i> Working</span>
+            <span style="font-size:13px; color:#666;"><?= $working ?> of <?= $total ?> (<?= $working_pct ?>%)</span>
+          </div>
+          <div style="background:#f0f0f0; border-radius:50px; height:10px; overflow:hidden;">
+            <div style="width:<?= $working_pct ?>%; background:#2e7d32; height:100%; border-radius:50px;"></div>
+          </div>
+        </div>
+
+        <!-- Maintenance -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:14px; font-weight:600; color:#f57c00;"><i class="fa-solid fa-screwdriver-wrench"></i> Under Maintenance</span>
+            <span style="font-size:13px; color:#666;"><?= $maintenance ?> of <?= $total ?> (<?= $maintenance_pct ?>%)</span>
+          </div>
+          <div style="background:#f0f0f0; border-radius:50px; height:10px; overflow:hidden;">
+            <div style="width:<?= $maintenance_pct ?>%; background:#f57c00; height:100%; border-radius:50px;"></div>
+          </div>
+        </div>
+
+        <!-- Out of Order -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:14px; font-weight:600; color:#d32f2f;"><i class="fa-solid fa-circle-xmark"></i> Out of Order</span>
+            <span style="font-size:13px; color:#666;"><?= $out_of_order ?> of <?= $total ?> (<?= $out_pct ?>%)</span>
+          </div>
+          <div style="background:#f0f0f0; border-radius:50px; height:10px; overflow:hidden;">
+            <div style="width:<?= $out_pct ?>%; background:#d32f2f; height:100%; border-radius:50px;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Full Equipment Table -->
+    <div class="members-table-container">
+      <div class="table-header flex justify-between align-center">
+        <h3>Full Equipment Report</h3>
+        <a href="equipment-list.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">Manage <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="members-table" style="min-width:700px;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Equipment Name</th>
+              <th>Quantity</th>
+              <th>Status</th>
+              <th>Added On</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (!empty($all_equipment)): ?>
+              <?php foreach ($all_equipment as $i => $e):
+                if ($e['status'] == 'Working')         { $badge = 'active';   $icon = 'circle-check'; }
+                elseif ($e['status'] == 'Maintenance') { $badge = 'inactive'; $icon = 'screwdriver-wrench'; }
+                else                                   { $badge = 'expired';  $icon = 'circle-xmark'; }
+              ?>
+              <tr>
+                <td><?= $i+1 ?></td>
+                <td>
+                  <div class="member-cell">
+                    <div class="member-avatar" style="background:#f3f6f9; color:#555; font-size:18px;">
+                      <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <div class="member-info">
+                      <span class="name"><?= htmlspecialchars($e['equipment_name']) ?></span>
+                    </div>
+                  </div>
+                </td>
+                <td><?= $e['quantity'] ?></td>
+                <td><span class="status-badge <?= $badge ?>"><i class="fa-solid fa-<?= $icon ?>"></i> <?= $e['status'] ?></span></td>
+                <td class="date-display"><?= date('d M Y', strtotime($e['created_at'])) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr><td colspan="5" class="text-center" style="padding:30px; color:#aaa;">No equipment found.</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
