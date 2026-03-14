@@ -26,9 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$member_id || !$title || !$date || !$time) {
         $error = 'Please fill in all required fields.';
     } else {
-        mysqli_query($conn, "INSERT INTO trainer_sessions (member_id, trainer_email, title, session_type, session_date, start_time, duration, location, notes)
+        $ins = mysqli_query($conn, "INSERT INTO trainer_sessions (member_id, trainer_email, title, session_type, session_date, start_time, duration, location, notes)
             VALUES ($member_id, '$trainer_email', '$title', '$type', '$date', '$time', $duration, '$location', '$notes')");
-        header("Location: schedule.php?date=$date"); exit();
+        if ($ins) {
+            header("Location: schedule.php?date=$date"); exit();
+        } else {
+            $error = 'Failed to create session: ' . mysqli_error($conn);
+        }
     }
 }
 
