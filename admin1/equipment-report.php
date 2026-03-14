@@ -8,22 +8,17 @@ if ($_SESSION['role'] != 'admin') { header("Location: ../index.php"); exit(); }
 $page = 'equipment-report';
 $page_title = 'Equipment Reports - Gym Management';
 
-// Summary counts
 $total        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment"))['t'];
 $working      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Working'"))['t'];
 $maintenance  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Maintenance'"))['t'];
 $out_of_order = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Out of Order'"))['t'];
+$total_qty    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment"))['t'];
+$working_qty  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment WHERE status='Working'"))['t'];
 
-// Total quantity
-$total_qty   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment"))['t'];
-$working_qty = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment WHERE status='Working'"))['t'];
-
-// All equipment for full report
 $all_equipment = [];
 $res = mysqli_query($conn, "SELECT * FROM equipment ORDER BY status ASC, equipment_name ASC");
 while ($row = mysqli_fetch_assoc($res)) { $all_equipment[] = $row; }
 
-// Status breakdown percentages
 $working_pct     = $total > 0 ? round(($working / $total) * 100) : 0;
 $maintenance_pct = $total > 0 ? round(($maintenance / $total) * 100) : 0;
 $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
@@ -34,14 +29,18 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
 <div class="main-wrapper">
   <div class="main-content">
 
-    <div class="page-header">
+    <div class="page-header flex justify-between align-center">
       <div>
         <h1 class="page-title">Equipment Reports</h1>
         <p class="page-subtitle">Overview and summary of all gym equipment — <?= date('d M Y') ?></p>
       </div>
+      <div>
+        <button onclick="exportToExcel()" class="btn app-btn-primary">
+          <i class="fa-solid fa-file-excel"></i> Export to Excel
+        </button>
+      </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-dumbbell"></i></div>
@@ -61,7 +60,6 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
       </div>
     </div>
 
-    <!-- Quantity Stats -->
     <div class="stats-grid" style="margin-bottom:25px;">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-layer-group"></i></div>
@@ -73,14 +71,11 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
       </div>
     </div>
 
-    <!-- Status Breakdown -->
     <div class="members-table-container mb-20" style="margin-bottom:25px;">
       <div class="table-header">
         <h3>Status Breakdown</h3>
       </div>
       <div style="padding:25px;">
-
-        <!-- Working -->
         <div style="margin-bottom:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-size:14px; font-weight:600; color:#2e7d32;"><i class="fa-solid fa-circle-check"></i> Working</span>
@@ -90,8 +85,6 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
             <div style="width:<?= $working_pct ?>%; background:#2e7d32; height:100%; border-radius:50px;"></div>
           </div>
         </div>
-
-        <!-- Maintenance -->
         <div style="margin-bottom:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-size:14px; font-weight:600; color:#f57c00;"><i class="fa-solid fa-screwdriver-wrench"></i> Under Maintenance</span>
@@ -101,8 +94,6 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
             <div style="width:<?= $maintenance_pct ?>%; background:#f57c00; height:100%; border-radius:50px;"></div>
           </div>
         </div>
-
-        <!-- Out of Order -->
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-size:14px; font-weight:600; color:#d32f2f;"><i class="fa-solid fa-circle-xmark"></i> Out of Order</span>
@@ -112,11 +103,9 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
             <div style="width:<?= $out_pct ?>%; background:#d32f2f; height:100%; border-radius:50px;"></div>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- Full Equipment Table -->
     <div class="members-table-container">
       <div class="table-header flex justify-between align-center">
         <h3>Full Equipment Report</h3>
@@ -167,6 +156,37 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+function exportToExcel() {
+    const equipmentData = <?= json_encode($all_equipment) ?>;
+
+    const rows = [
+        ['Equipment Report - <?= date("d M Y") ?>'],
+        [],
+        ['Summary'],
+        ['Total Equipment Types', <?= $total ?>],
+        ['Working', <?= $working ?>],
+        ['Under Maintenance', <?= $maintenance ?>],
+        ['Out of Order', <?= $out_of_order ?>],
+        ['Total Units', <?= $total_qty ?? 0 ?>],
+        ['Working Units', <?= $working_qty ?? 0 ?>],
+        [],
+        ['Full Equipment List'],
+        ['#', 'Equipment Name', 'Quantity', 'Status', 'Added On']
+    ];
+
+    equipmentData.forEach((e, i) => {
+        rows.push([i + 1, e.equipment_name, e.quantity, e.status, e.created_at]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Equipment Report');
+    XLSX.writeFile(wb, 'Equipment_Report_<?= date("Y-m-d") ?>.xlsx');
+}
+</script>
 </body>
 </html>
