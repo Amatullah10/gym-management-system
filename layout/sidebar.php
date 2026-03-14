@@ -10,7 +10,7 @@ if ($user_role == 'admin') {
 } elseif ($user_role == 'receptionist') {
     $base = '../receptionist/';
 } elseif ($user_role == 'trainer') {
-    $base = '../trainer1/';
+    $base = '../trainer/';
 } elseif ($user_role == 'accountant') {
     $base = '../accountant/';
 } elseif ($user_role == 'customer') {
@@ -149,8 +149,18 @@ $user_menu = $menus[$user_role] ?? [];
       <!-- ── Assigned Members — Trainer Only ── -->
       <?php if (!empty($user_menu['assigned_members'])): ?>
       <li class="<?php if($page=='assigned-members') echo 'active'; ?>">
-        <a href="<?= $base ?>assigned-members.php">
+        <a href="<?= $base ?>assigned-member.php">
           <i class="fas fa-users-cog"></i><span>Assigned Members</span>
+        </a>
+      </li>
+      <li class="<?php if($page=='workout-plans') echo 'active'; ?>">
+        <a href="<?= $base ?>workout-plans.php">
+          <i class="fas fa-dumbbell"></i><span>Workout Plans</span>
+        </a>
+      </li>
+      <li class="<?php if($page=='schedule') echo 'active'; ?>">
+        <a href="<?= $base ?>schedule.php">
+          <i class="fas fa-calendar-alt"></i><span>Schedule</span>
         </a>
       </li>
       <?php endif; ?>

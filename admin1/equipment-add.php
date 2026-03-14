@@ -5,8 +5,7 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'admin') { header("Location: ../index.php"); exit(); }
 
-$page = 'equipment-add';
-$page_title = 'Add Equipment - Gym Management';
+$page = 'equipment-list';
 $success = '';
 $error   = '';
 
@@ -22,13 +21,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $insert = mysqli_query($conn, "INSERT INTO equipment (equipment_name, quantity, status) VALUES ('$equipment_name', '$quantity', '$status')");
         if ($insert) {
-            $success = "Equipment <strong>$equipment_name</strong> added successfully!";
+            header("Location: equipment-list.php?msg=added");
+            exit();
         } else {
             $error = "Failed to add equipment! Error: " . mysqli_error($conn);
         }
     }
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Equipment - Gym Management</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
 <?php include '../layout/header.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
@@ -59,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="form-row">
             <div>
               <label>Equipment Name</label>
-              <input type="text" name="equipment_name" placeholder="e.g. Treadmill, Dumbbells, Bench Press" required>
+              <input type="text" name="equipment_name" placeholder="e.g., Treadmill, Dumbbells, Bench Press" required>
             </div>
             <div>
               <label>Quantity</label>
@@ -72,16 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
               <label>Status</label>
               <select name="status" required>
                 <option value="Working">Working</option>
-                <option value="Maintenance">Maintenance</option>
+                <option value="Maintenance">Under Maintenance</option>
                 <option value="Out of Order">Out of Order</option>
               </select>
             </div>
           </div>
         </div>
 
-        <div style="display:flex; gap:15px; margin-top:10px;">
+        <div class="flex gap-2 mt-10">
           <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-plus"></i> Add Equipment</button>
-          <a href="equipment-list.php" class="btn app-btn-secondary"><i class="fa-solid fa-arrow-left"></i> Cancel</a>
+          <a href="equipment-list.php" class="btn app-btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to List</a>
         </div>
 
       </form>
