@@ -176,18 +176,18 @@ $user_menu = $menus[$user_role] ?? [];
         </label>
         <ul class="submenu-items">
           <li class="<?php if($page=='mark-attendance') echo 'active'; ?>">
-            <a href="<?= $base ?>mark-attendance.php">
+            <a href="../modules/mark-attendance.php">
               <i class="fas fa-arrow-right"></i> Mark Attendance
             </a>
           </li>
           <li class="<?php if($page=='view-attendance') echo 'active'; ?>">
-            <a href="<?= $base ?>view-attendance.php">
+            <a href="../modules/view-attendance.php">
               <i class="fas fa-arrow-right"></i> View Attendance
             </a>
           </li>
           <?php if ($user_role == 'admin' || $user_role == 'receptionist'): ?>
           <li class="<?php if($page=='attendance-report') echo 'active'; ?>">
-            <a href="<?= $base ?>attendance-report.php">
+            <a href="../modules/attendance-report.php">
               <i class="fas fa-arrow-right"></i> Attendance Reports
             </a>
           </li>
