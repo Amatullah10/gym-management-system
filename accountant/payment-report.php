@@ -5,17 +5,17 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'accountant') { header("Location: ../index.php"); exit(); }
 
-$page = 'payment-report';
+$page       = 'payment-report';
 $page_title = 'Payment Report - Gym Management';
 
-$from_date = isset($_GET['from_date']) ? $_GET['from_date'] : date('Y-m-01');
-$to_date   = isset($_GET['to_date'])   ? $_GET['to_date']   : date('Y-m-d');
+$from_date = isset($_GET['from_date']) ? mysqli_real_escape_string($conn, $_GET['from_date']) : date('Y-m-01');
+$to_date   = isset($_GET['to_date'])   ? mysqli_real_escape_string($conn, $_GET['to_date'])   : date('Y-m-d');
 
 // Overall income stats
-$total_income   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Paid' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
-$total_due      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Due' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
-$total_overdue  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Overdue' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
-$total_count    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments WHERE DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
+$total_income  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Paid' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
+$total_due     = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Due' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
+$total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Overdue' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
+$total_count   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments WHERE DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];
 
 // Monthly breakdown
 $monthly = [];
@@ -60,7 +60,7 @@ while ($row = mysqli_fetch_assoc($res3)) { $payments[] = $row; }
         </div>
         <div class="flex gap-3 mt-10">
           <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-filter"></i> Apply Filter</button>
-          <a href="payment_report.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
+          <a href="payment-report.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
         </div>
       </form>
     </div>
@@ -103,7 +103,7 @@ while ($row = mysqli_fetch_assoc($res3)) { $payments[] = $row; }
             <?php if (!empty($monthly)): ?>
               <?php foreach ($monthly as $i => $m): ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td><?= $m['month'] ?></td>
                 <td><?= $m['count'] ?></td>
                 <td>₹<?= number_format($m['total'], 2) ?></td>
@@ -136,7 +136,7 @@ while ($row = mysqli_fetch_assoc($res3)) { $payments[] = $row; }
             <?php if (!empty($methods)): ?>
               <?php foreach ($methods as $i => $m): ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td><?= htmlspecialchars($m['payment_method']) ?></td>
                 <td><?= $m['count'] ?></td>
                 <td>₹<?= number_format($m['total'], 2) ?></td>
@@ -172,12 +172,12 @@ while ($row = mysqli_fetch_assoc($res3)) { $payments[] = $row; }
           <tbody>
             <?php if (!empty($payments)): ?>
               <?php foreach ($payments as $i => $p):
-                if ($p['status'] == 'Paid')     { $badge = 'active'; }
-                elseif ($p['status'] == 'Due')  { $badge = 'inactive'; }
-                else                            { $badge = 'expired'; }
+                if ($p['status'] == 'Paid')         { $badge = 'active'; }
+                elseif ($p['status'] == 'Due')       { $badge = 'inactive'; }
+                else                                 { $badge = 'expired'; }
               ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td>
                   <div class="member-cell">
                     <div class="member-avatar"><?= strtoupper(substr($p['full_name'], 0, 1)) ?></div>
@@ -202,6 +202,7 @@ while ($row = mysqli_fetch_assoc($res3)) { $payments[] = $row; }
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

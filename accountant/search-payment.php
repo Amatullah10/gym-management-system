@@ -5,15 +5,19 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'accountant') { header("Location: ../index.php"); exit(); }
 
-$page = 'search-payment';
+$page       = 'search-payment';
 $page_title = 'Search Payment - Gym Management';
 
-$search        = isset($_GET['search'])    ? mysqli_real_escape_string($conn, $_GET['search']) : '';
-$status_filter = isset($_GET['status'])    ? $_GET['status']    : '';
-$date_filter   = isset($_GET['date'])      ? $_GET['date']      : '';
-$method_filter = isset($_GET['method'])    ? $_GET['method']    : '';
+$search        = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$date_filter   = isset($_GET['date'])   ? mysqli_real_escape_string($conn, $_GET['date'])   : '';
 
-$where = "WHERE 1=1";
+// Whitelist dropdowns
+$allowed_statuses = ['Paid', 'Due', 'Overdue'];
+$allowed_methods  = ['Cash', 'Card', 'UPI', 'Online'];
+$status_filter = isset($_GET['status']) && in_array($_GET['status'], $allowed_statuses) ? $_GET['status'] : '';
+$method_filter = isset($_GET['method']) && in_array($_GET['method'], $allowed_methods)  ? $_GET['method'] : '';
+
+$where    = "WHERE 1=1";
 if ($search)        { $where .= " AND (m.full_name LIKE '%$search%' OR m.email LIKE '%$search%' OR p.transaction_id LIKE '%$search%')"; }
 if ($status_filter) { $where .= " AND p.status = '$status_filter'"; }
 if ($date_filter)   { $where .= " AND DATE(p.payment_date) = '$date_filter'"; }
@@ -76,7 +80,7 @@ if ($searched) {
         </div>
         <div class="flex gap-3 mt-10">
           <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-          <a href="search_payment.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
+          <a href="search-payment.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
         </div>
       </form>
     </div>
@@ -104,12 +108,12 @@ if ($searched) {
           <tbody>
             <?php if (!empty($payments)): ?>
               <?php foreach ($payments as $i => $p):
-                if ($p['status'] == 'Paid')     { $badge = 'active'; }
-                elseif ($p['status'] == 'Due')  { $badge = 'inactive'; }
-                else                            { $badge = 'expired'; }
+                if ($p['status'] == 'Paid')         { $badge = 'active'; }
+                elseif ($p['status'] == 'Due')       { $badge = 'inactive'; }
+                else                                 { $badge = 'expired'; }
               ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td>
                   <div class="member-cell">
                     <div class="member-avatar"><?= strtoupper(substr($p['full_name'], 0, 1)) ?></div>
@@ -148,6 +152,7 @@ if ($searched) {
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

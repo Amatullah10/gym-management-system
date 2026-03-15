@@ -5,7 +5,7 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'accountant') { header("Location: ../index.php"); exit(); }
 
-$page = 'dashboard';
+$page       = 'dashboard';
 $page_title = 'Accountant Dashboard - Gym Management';
 
 $today = date('Y-m-d');
@@ -65,7 +65,7 @@ while ($row = mysqli_fetch_assoc($res)) { $recent[] = $row; }
     <div class="members-table-container">
       <div class="table-header flex justify-between align-center">
         <h3>Recent Transactions</h3>
-        <a href="payment_list.php" class="page-subtitle">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="payment-list.php" class="page-subtitle">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
       <div>
         <table class="members-table">
@@ -84,12 +84,12 @@ while ($row = mysqli_fetch_assoc($res)) { $recent[] = $row; }
           <tbody>
             <?php if (!empty($recent)): ?>
               <?php foreach ($recent as $i => $p):
-                if ($p['status'] == 'Paid')     { $badge = 'active'; }
-                elseif ($p['status'] == 'Due')  { $badge = 'inactive'; }
-                else                            { $badge = 'expired'; }
+                if ($p['status'] == 'Paid')         { $badge = 'active'; }
+                elseif ($p['status'] == 'Due')       { $badge = 'inactive'; }
+                else                                 { $badge = 'expired'; }
               ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td>
                   <div class="member-cell">
                     <div class="member-avatar"><?= strtoupper(substr($p['full_name'], 0, 1)) ?></div>
@@ -117,6 +117,7 @@ while ($row = mysqli_fetch_assoc($res)) { $recent[] = $row; }
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

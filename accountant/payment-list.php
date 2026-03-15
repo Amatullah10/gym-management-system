@@ -5,12 +5,18 @@ require_once '../dbcon.php';
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'accountant') { header("Location: ../index.php"); exit(); }
 
-$page = 'payment-list';
+$page       = 'payment-list';
 $page_title = 'Payment List - Gym Management';
 
 $search        = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
-$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$plan_filter   = isset($_GET['plan'])   ? $_GET['plan']   : '';
+$status_filter = isset($_GET['status']) ? mysqli_real_escape_string($conn, $_GET['status']) : '';
+$plan_filter   = isset($_GET['plan'])   ? mysqli_real_escape_string($conn, $_GET['plan'])   : '';
+
+// Whitelist status and plan to prevent injection
+$allowed_statuses = ['Paid', 'Due', 'Overdue'];
+$allowed_plans    = ['Monthly', 'Quarterly', 'Yearly'];
+if (!in_array($status_filter, $allowed_statuses)) { $status_filter = ''; }
+if (!in_array($plan_filter, $allowed_plans))       { $plan_filter = ''; }
 
 $where = "WHERE 1=1";
 if ($search)        { $where .= " AND (m.full_name LIKE '%$search%' OR m.email LIKE '%$search%')"; }
@@ -21,9 +27,9 @@ $payments = [];
 $res = mysqli_query($conn, "SELECT p.*, m.full_name, m.email FROM payments p JOIN members m ON p.member_id = m.id $where ORDER BY p.payment_date DESC");
 while ($row = mysqli_fetch_assoc($res)) { $payments[] = $row; }
 
-$total_paid    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments WHERE status='Paid'"))['t'];
-$total_due     = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments WHERE status='Due'"))['t'];
-$total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments WHERE status='Overdue'"))['t'];
+$total_paid    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments p JOIN members m ON p.member_id = m.id $where AND p.status='Paid'"))['t'];
+$total_due     = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments p JOIN members m ON p.member_id = m.id $where AND p.status='Due'"))['t'];
+$total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM payments p JOIN members m ON p.member_id = m.id $where AND p.status='Overdue'"))['t'];
 ?>
 <?php include '../layout/header.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
@@ -82,8 +88,8 @@ $total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FR
         </div>
         <div class="flex gap-3 mt-10">
           <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-          <a href="payment_list.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
-          <a href="record_payment.php" class="btn app-btn-primary"><i class="fa-solid fa-plus"></i> Add Payment</a>
+          <a href="payment-list.php" class="btn app-btn-secondary"><i class="fa-solid fa-rotate"></i> Reset</a>
+          <a href="record-payment.php" class="btn app-btn-primary"><i class="fa-solid fa-plus"></i> Add Payment</a>
         </div>
       </form>
     </div>
@@ -109,12 +115,12 @@ $total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FR
           <tbody>
             <?php if (!empty($payments)): ?>
               <?php foreach ($payments as $i => $p):
-                if ($p['status'] == 'Paid')     { $badge = 'active'; }
-                elseif ($p['status'] == 'Due')  { $badge = 'inactive'; }
-                else                            { $badge = 'expired'; }
+                if ($p['status'] == 'Paid')         { $badge = 'active'; }
+                elseif ($p['status'] == 'Due')       { $badge = 'inactive'; }
+                else                                 { $badge = 'expired'; }
               ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td>
                   <div class="member-cell">
                     <div class="member-avatar"><?= strtoupper(substr($p['full_name'], 0, 1)) ?></div>
@@ -142,6 +148,7 @@ $total_overdue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FR
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
