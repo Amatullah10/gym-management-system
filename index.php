@@ -48,7 +48,7 @@ if (isset($_POST['submit'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitnessPro - Login</title>
+    <title>NextGen Fitness - Login</title>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -60,13 +60,12 @@ if (isset($_POST['submit'])) {
 <body>
     <div class="login-container">
         <div class="login-card">
-            <!-- Icon Badge -->
+            <!-- Logo -->
             <div class="icon-badge">
-                <i class="fa fa-dumbbell"></i>
-            </div>
+                <img src="assets/logo.png" alt="NextGen Fitness" style="width:70px;height:70px;object-fit:contain;"></div>
             
             <!-- Title -->
-            <h2 class="login-title">Fitness Pro</h2>
+            <h2 class="login-title">NextGen Fitness</h2>
             <p class="login-subtitle">Sign in to continue</p>
 
             <!-- Error Message -->

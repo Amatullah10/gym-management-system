@@ -88,10 +88,10 @@ include '../layout/sidebar.php';
             <div style="background:#fde8e8;border-radius:16px;width:120px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
               <i class="fas fa-dumbbell" style="font-size:42px;color:var(--active-color);"></i>
             </div>
-            <h3 style="margin:0 0 4px;font-size:18px;font-weight:700;">Power Fitness Gym</h3>
+            <h3 style="margin:0 0 4px;font-size:18px;font-weight:700;">NextGen Fitness GYM</h3>
             <p style="margin:0;color:#888;font-size:13px;">123 Main Street, Mumbai</p>
             <p style="margin:2px 0;color:var(--active-color);font-size:13px;">Tel: 022-1234-5678</p>
-            <p style="margin:0;color:var(--active-color);font-size:13px;">Email: info@powerfitness.in</p>
+            <p style="margin:0;color:var(--active-color);font-size:13px;">Email: nextgenfitness1407@gmail.com</p>
           </div>
 
           <!-- Right: Form Fields -->

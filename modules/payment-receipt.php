@@ -61,9 +61,9 @@ include '../layout/sidebar.php';
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:20px;">
         <div>
           <div>Invoice #<?= $invoice ?></div>
-          <div>Power Fitness Gym</div>
+          <div>NextGen FItness GYM</div>
           <div>123 Main Street, Mumbai</div>
-          <div>Tel: 022-1234-5678 | Email: info@powerfitness.in</div>
+          <div>Tel: 022-1234-5678 | Email: nextgenfitness1407@gmail.com</div>
         </div>
         <div style="text-align:right;">
           Last Payment: <?= date('Y-m-d', strtotime($p['payment_date'])) ?>
