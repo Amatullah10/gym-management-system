@@ -101,12 +101,21 @@ if (mysqli_num_rows($new_members_result) > 0) {
 $selected_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 
 // Fetch all members with their attendance status for selected date
+$trainer_join = '';
+if ($_SESSION['role'] === 'trainer') {
+    $te = mysqli_real_escape_string($conn, $_SESSION['email']);
+    $tr = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM staff WHERE email='$te'"));
+    $tid = $tr ? (int)$tr['id'] : 0;
+    $trainer_join = "INNER JOIN trainer_assignments ta ON m.id=ta.member_id AND ta.trainer_id=$tid AND ta.status='Active'";
+}
+
 $sql = "SELECT 
     m.id,
     m.full_name,
     m.membership_type,
     COALESCE(a.status, 'Unmarked') as attendance_status
 FROM members m
+$trainer_join
 LEFT JOIN attendance a ON m.id = a.member_id AND a.attendance_date = ?
 WHERE m.membership_status = 'active'
 ORDER BY m.full_name ASC";

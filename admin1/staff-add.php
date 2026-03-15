@@ -34,8 +34,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES ('$full_name', '$role', '$email', '$phone', '$join_date', '$salary', '$address', '$skills', '$experience', '$emergency', 'Active')";
 
         if (mysqli_query($conn, $sql)) {
-            $success_message = "Staff member added successfully!";
-            header("refresh:2;url=staff-list.php");
+            // Create user login based on role
+            $check_user = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
+            if (mysqli_num_rows($check_user) === 0) {
+                if ($role === 'trainer') {
+                    // Trainer: create account with empty password, send email to set it
+                    mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('trainer', '$email', '')");
+                    require_once '../auth/mailer.php';
+                    $sent = sendSetPasswordEmail($email, $full_name, $conn);
+                    $success_message = $sent
+                        ? "Trainer added! Set-password email sent to <strong>$email</strong>."
+                        : "Trainer added! Could not send email. Share set-password link manually.";
+                } elseif (in_array($role, ['accountant', 'receptionist'])) {
+                    // Accountant/Receptionist: admin sets password, store hashed
+                    $plain_pass = $_POST['password'] ?? '';
+                    if (empty($plain_pass)) {
+                        $error_message = "Please set a password for $role.";
+                    } else {
+                        $hashed = password_hash($plain_pass, PASSWORD_BCRYPT);
+                        $hashed_safe = mysqli_real_escape_string($conn, $hashed);
+                        mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('$role', '$email', '$hashed_safe')");
+                        $success_message = "Staff member added! Login: <strong>$email</strong> / <strong>$plain_pass</strong>";
+                    }
+                } else {
+                    // Other roles (maintenance etc) — no login
+                    $success_message = "Staff member added successfully!";
+                }
+            }
+            if ($success_message) header("refresh:3;url=staff-list.php");
         } else {
             $error_message = "Error: " . mysqli_error($conn);
         }
@@ -168,6 +194,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
 
+        <!-- ========== LOGIN / PASSWORD ========== -->
+        <div class="section" id="passwordSection" style="display:none;">
+          <h3><i class="fas fa-lock"></i> Login Password</h3>
+          <p class="section-subtitle">Set a login password for this staff member</p>
+          <div class="form-row">
+            <div>
+              <label>Password *</label>
+              <input type="password" name="password" id="passwordInput" placeholder="Set login password">
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="trainerEmailInfo" style="display:none;">
+          <div class="app-alert app-alert-warning" style="margin:0;">
+            <i class="fas fa-info-circle"></i> A set-password email will be automatically sent to the trainer's email address.
+          </div>
+        </div>
+
         <!-- ========== BUTTONS ========== -->
         <div class="d-flex gap-3">
           <button type="submit" class="btn app-btn-primary w-100">
@@ -185,5 +229,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Show/hide password field based on role
+document.querySelector('select[name="role"]').addEventListener('change', function() {
+    const role = this.value;
+    const pwSection = document.getElementById('passwordSection');
+    const trainerInfo = document.getElementById('trainerEmailInfo');
+    const pwInput = document.getElementById('passwordInput');
+
+    if (role === 'accountant' || role === 'receptionist') {
+        pwSection.style.display = 'block';
+        trainerInfo.style.display = 'none';
+        pwInput.required = true;
+    } else if (role === 'trainer') {
+        pwSection.style.display = 'none';
+        trainerInfo.style.display = 'block';
+        pwInput.required = false;
+    } else {
+        pwSection.style.display = 'none';
+        trainerInfo.style.display = 'none';
+        pwInput.required = false;
+    }
+});
+</script>
 </body>
 </html>

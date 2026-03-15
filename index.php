@@ -6,47 +6,38 @@ session_start();
 require_once 'dbcon.php';
 
 if (isset($_POST['submit'])) {
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = mysqli_real_escape_string($conn, $_POST['password']);
-    $role = mysqli_real_escape_string($conn, $_POST['role']);
+    $email    = mysqli_real_escape_string($conn, $_POST['email']);
+    $password = $_POST['password'];
+    $role     = mysqli_real_escape_string($conn, $_POST['role']);
 
-    // Check credentials in database
-    $query = "SELECT * FROM users WHERE email='$email' AND password='$password' AND role='$role'";
-    $data = mysqli_query($conn, $query);
+    $query = "SELECT * FROM users WHERE email='$email' AND role='$role'";
+    $data  = mysqli_query($conn, $query);
 
     if ($data && mysqli_num_rows($data) > 0) {
         $row = mysqli_fetch_assoc($data);
-        
-        // CLEAR OLD SESSION FIRST
-        session_unset();
-        session_regenerate_id(true);
-        
-        // SET NEW SESSION WITH DATABASE VALUES
-        $_SESSION['user_id'] = $row['id'];
-        $_SESSION['email']   = $row['email'];
-        $_SESSION['role']    = $row['role'];
 
-        // Redirect based on role
-        switch ($row['role']) {
-            case 'admin':
-                header("Location: admin1/dashboard1.php");
-                break;
-            case 'trainer':
-                header("Location: trainer/index.php");
-                break;
-            case 'accountant':
-                header("Location: accountant/index.php");
-                break;
-            case 'receptionist':
-                header("Location: receptionist/index.php");
-                break;
-            case 'customer':
-                header("Location: customer/index.php");
-                break;
-            default:
-                echo "<script>alert('Invalid role');</script>";
+        // Support both hashed (new) and plain text (legacy) passwords
+        $password_ok = password_verify($password, $row['password']) || $row['password'] === $password;
+
+        if ($password_ok) {
+            session_unset();
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $row['id'];
+            $_SESSION['email']   = $row['email'];
+            $_SESSION['role']    = $row['role'];
+
+            switch ($row['role']) {
+                case 'admin':        header("Location: admin1/dashboard1.php"); break;
+                case 'trainer':      header("Location: trainer/index.php"); break;
+                case 'accountant':   header("Location: accountant/index.php"); break;
+                case 'receptionist': header("Location: receptionist/index.php"); break;
+                case 'customer':     header("Location: customer/index.php"); break;
+                default: echo "<script>alert('Invalid role');</script>";
+            }
+            exit();
+        } else {
+            $error_message = "Invalid email, password, or role!";
         }
-        exit();
     } else {
         $error_message = "Invalid email, password, or role!";
     }
@@ -123,7 +114,7 @@ if (isset($_POST['submit'])) {
                 <button type="submit" class="btn-login" name="submit">Login</button>
 
                 <!-- Forgot Password Link -->
-                <a href="#" class="forgot-link">Forgot Password?</a>
+                <a href="auth/forgot-password.php" class="forgot-link">Forgot Password?</a>
             </form>
         </div>
     </div>

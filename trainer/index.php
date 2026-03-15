@@ -13,12 +13,18 @@ $avg_progress   = round(mysqli_fetch_assoc(mysqli_query($conn, "SELECT AVG(progr
 $trainer_email_safe = mysqli_real_escape_string($conn, $trainer_email);
 $today_sessions = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM trainer_sessions WHERE trainer_email='$trainer_email_safe' AND session_date=CURDATE() AND status='Upcoming'"))['c'];
 
+$trainer_safe = mysqli_real_escape_string($conn, $trainer_email);
+$trainer_row  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM staff WHERE email='$trainer_safe'"));
+$trainer_id   = $trainer_row ? (int)$trainer_row['id'] : 0;
+
 $recent_q = mysqli_query($conn, "SELECT m.id, m.full_name, m.email,
     COALESCE(wp.goal,'Not Set') as goal,
     COALESCE(wp.current_plan,'Not Assigned') as current_plan,
     COALESCE(wp.progress,0) as progress,
     COALESCE(wp.status,'Pending') as workout_status
-    FROM members m LEFT JOIN workout_plans wp ON m.id=wp.member_id
+    FROM members m
+    INNER JOIN trainer_assignments ta ON m.id=ta.member_id AND ta.trainer_id=$trainer_id AND ta.status='Active'
+    LEFT JOIN workout_plans wp ON m.id=wp.member_id
     ORDER BY m.created_at DESC LIMIT 5");
 $recent_members = [];
 while($r = mysqli_fetch_assoc($recent_q)) $recent_members[] = $r;

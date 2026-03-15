@@ -6,12 +6,20 @@ if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['trainer','admin'
 }
 $page = 'assigned-members';
 
+$trainer_filter = '';
+if ($_SESSION['role'] === 'trainer') {
+    $trainer_email_safe = mysqli_real_escape_string($conn, $_SESSION['email']);
+    $trainer_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM staff WHERE email='$trainer_email_safe'"));
+    $trainer_id = $trainer_row ? (int)$trainer_row['id'] : 0;
+    $trainer_filter = "INNER JOIN trainer_assignments ta ON m.id=ta.member_id AND ta.trainer_id=$trainer_id AND ta.status='Active'";
+}
+
 $sql = "SELECT m.id, m.full_name, m.email, m.membership_status,
     COALESCE(wp.goal,'Not Set') as goal,
     COALESCE(wp.current_plan,'Not Assigned') as current_plan,
     COALESCE(wp.progress,0) as progress,
     COALESCE(wp.status,'Pending') as workout_status
-    FROM members m LEFT JOIN workout_plans wp ON m.id=wp.member_id
+    FROM members m $trainer_filter LEFT JOIN workout_plans wp ON m.id=wp.member_id
     ORDER BY m.full_name ASC";
 $result = mysqli_query($conn, $sql);
 $members = [];

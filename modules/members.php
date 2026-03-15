@@ -10,8 +10,35 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
 
 $page = 'members'; // For active sidebar highlight
 
-// Fetch all members from database
-$sql = "SELECT * FROM members ORDER BY created_at DESC";
+// Handle trainer assignment
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_trainer'])) {
+    $m_id = (int)$_POST['assign_member_id'];
+    $t_id = (int)$_POST['assign_trainer_id'];
+    $by   = mysqli_real_escape_string($conn, $_SESSION['email']);
+    if ($t_id === 0) {
+        mysqli_query($conn, "DELETE FROM trainer_assignments WHERE member_id=$m_id");
+    } else {
+        $exists = mysqli_num_rows(mysqli_query($conn, "SELECT id FROM trainer_assignments WHERE member_id=$m_id"));
+        if ($exists) {
+            mysqli_query($conn, "UPDATE trainer_assignments SET trainer_id=$t_id, assigned_by='$by', assigned_date=CURDATE(), status='Active' WHERE member_id=$m_id");
+        } else {
+            mysqli_query($conn, "INSERT INTO trainer_assignments (member_id, trainer_id, assigned_by) VALUES ($m_id, $t_id, '$by')");
+        }
+    }
+    header("Location: members.php?success=Trainer assigned successfully!"); exit();
+}
+
+// Fetch trainers for assign modal
+$trainers_q = mysqli_query($conn, "SELECT s.id, s.full_name FROM staff s JOIN users u ON u.email=s.email WHERE u.role='trainer' AND s.status='Active' ORDER BY s.full_name");
+$trainers = [];
+while($r = mysqli_fetch_assoc($trainers_q)) $trainers[] = $r;
+
+// Fetch all members from database with assigned trainer
+$sql = "SELECT m.*, s.full_name as trainer_name, ta.trainer_id
+        FROM members m
+        LEFT JOIN trainer_assignments ta ON m.id = ta.member_id AND ta.status='Active'
+        LEFT JOIN staff s ON s.id = ta.trainer_id
+        ORDER BY m.created_at DESC";
 $result = mysqli_query($conn, $sql);
 
 $members = [];
@@ -153,6 +180,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
             <th>Member</th>
             <th>Contact</th>
             <th>Plan</th>
+            <th>Trainer</th>
             <th>Status</th>
             <th>Expiry</th>
             <th>Actions</th>
@@ -203,6 +231,15 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                 </span>
               </td>
               
+              <!-- Trainer -->
+              <td>
+                <?php if ($member['trainer_name']): ?>
+                  <span style="font-size:13px;color:#333;font-weight:500;"><?= htmlspecialchars($member['trainer_name']) ?></span>
+                <?php else: ?>
+                  <span style="font-size:12px;color:#aaa;">Not assigned</span>
+                <?php endif; ?>
+              </td>
+              
               <!-- Status -->
               <td>
                 <span class="status-badge <?= strtolower($member['membership_status']) ?>">
@@ -223,6 +260,11 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                   <button class="btn-action edit" onclick='openEditModal(<?= json_encode($member) ?>)' title="Edit Member">
                     <i class="fa-regular fa-pen-to-square"></i>
                   </button>
+                  <?php if (in_array($_SESSION['role'], ['admin','receptionist'])): ?>
+                  <button class="btn-action view" onclick="openAssignTrainer(<?= $member['id'] ?>, '<?= htmlspecialchars($member['full_name'], ENT_QUOTES) ?>', <?= $member['trainer_id'] ?? 'null' ?>)" title="Assign Trainer">
+                    <i class="fas fa-user-tie"></i>
+                  </button>
+                  <?php endif; ?>
                   <button class="btn-action delete" onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['full_name']) ?>')" title="Delete Member">
                     <i class="fa-regular fa-trash-can"></i>
                   </button>
@@ -380,10 +422,45 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
   </div>
 </div>
 
+<!-- Assign Trainer Modal -->
+<div id="assignTrainerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:30px;width:100%;max-width:420px;margin:20px;">
+    <h3 style="margin:0 0 5px;font-size:18px;font-weight:700;"><i class="fas fa-user-tie" style="color:var(--active-color);"></i> Assign Trainer</h3>
+    <p id="assignMemberName" style="color:#666;font-size:14px;margin:0 0 20px;"></p>
+    <form method="POST">
+      <input type="hidden" name="assign_trainer" value="1">
+      <input type="hidden" name="assign_member_id" id="assignMemberId">
+      <label>Select Trainer</label>
+      <select name="assign_trainer_id" id="assignTrainerId" style="margin-bottom:20px;">
+        <option value="0">-- Remove Assignment --</option>
+        <?php foreach($trainers as $t): ?>
+        <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['full_name']) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <div style="display:flex;gap:10px;">
+        <button type="button" onclick="document.getElementById('assignTrainerModal').style.display='none'" class="btn app-btn-secondary" style="flex:1;">Cancel</button>
+        <button type="submit" class="btn app-btn-primary" style="flex:1;">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+function openAssignTrainer(memberId, memberName, currentTrainerId) {
+  document.getElementById('assignMemberId').value = memberId;
+  document.getElementById('assignMemberName').textContent = 'Member: ' + memberName;
+  if (currentTrainerId) {
+    document.getElementById('assignTrainerId').value = currentTrainerId;
+  }
+  document.getElementById('assignTrainerModal').style.display = 'flex';
+}
+document.getElementById('assignTrainerModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
 // Open Edit Modal with prefilled data
 function openEditModal(member) {
   document.getElementById('edit_member_id').value = member.id;

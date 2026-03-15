@@ -43,9 +43,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES ('$full_name', '$email', '$phone', '$dob', '$gender', '$address', '$membership_type', '$start_date', '$end_date', '$duration', '$fitness_level', 'Active')";
         
         if (mysqli_query($conn, $sql)) {
-            $success_message = "Member registered successfully!";
-            // Redirect to members page after 2 seconds
-            header("refresh:2;url=members.php");
+            // Create user account with empty password (they set it via email link)
+            $check_user = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
+            if (mysqli_num_rows($check_user) === 0) {
+                mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '')");
+            }
+            // Send welcome email with set-password link
+            require_once '../auth/mailer.php';
+            $sent = sendSetPasswordEmail($email, $full_name, $conn);
+            $success_message = $sent
+                ? "Member registered! Welcome email sent to <strong>$email</strong> to set their password."
+                : "Member registered! Could not send email — share this link manually: <a href='http://localhost/gym-management-system/auth/set-password.php' target='_blank'>Set Password Page</a>";
+            header("refresh:3;url=members.php");
         } else {
             $error_message = "Error: " . mysqli_error($conn);
         }
