@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 14, 2026 at 05:30 AM
+-- Generation Time: Mar 15, 2026 at 11:24 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -101,7 +101,7 @@ CREATE TABLE `equipment` (
 --
 
 INSERT INTO `equipment` (`id`, `equipment_name`, `quantity`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'aa', 1, 'Out of Order', '2026-03-14 00:22:16', '2026-03-14 00:26:02');
+(1, 'aa', 1, 'Maintenance', '2026-03-14 00:22:16', '2026-03-14 18:17:53');
 
 -- --------------------------------------------------------
 
@@ -136,7 +136,32 @@ INSERT INTO `members` (`id`, `full_name`, `email`, `phone`, `dob`, `gender`, `ad
 (2, 'Priya Patel', 'priya.patel@email.com', '+91 87654 32109', '1998-07-22', 'Female', '456 Linking Road, Bandra', 'Basic - 799/month', '2024-03-20', '2025-03-20', '6 Months', 'Active', 'Beginner', '2026-01-17 19:06:40', '2026-01-17 19:06:40'),
 (3, 'Amit Kumar', 'amit.kumar@email.com', '+91 76543 21098', '1992-11-08', 'Male', '789 Andheri West, Mumbai', 'Premium - 1299/month', '2023-06-10', '2024-06-10', '3 Months', 'Expired', 'Advanced', '2026-01-17 19:06:40', '2026-01-17 19:06:40'),
 (4, 'Amatullah Imran Dhorajiwala', 'ammu@gmail.com', '8850596172', '2005-10-14', 'Female', 'xyz abc 401209', 'Premium - 1299/month', '2026-01-01', '2026-02-01', '1 Month', 'Active', 'Medium', '2026-01-17 19:10:50', '2026-01-17 19:10:50'),
-(5, 'Hatim Dhorajiwala', 'hatim@gmail.com', '88505961098', '2026-01-01', 'Male', 'abc xyz', 'Basic - 799/month', '2026-01-01', '2026-02-01', '3 Months', 'Inactive', 'Advanced', '2026-01-17 19:16:23', '2026-01-18 18:21:03');
+(5, 'Hatim Dhorajiwala', 'hatim@gmail.com', '88505961098', '2026-01-01', 'Male', 'abc xyz', 'Basic - 799/month', '2026-01-01', '2026-02-01', '3 Months', 'Inactive', 'Advanced', '2026-01-17 19:16:23', '2026-01-18 18:21:03'),
+(6, 'Hatim Dhorajiwala', 'faridadhorajiwala0636@gmail.com', '8805676299', '2010-04-21', 'Male', 'ram krupa apt near sangam medical ', 'Standard - 999/month', '2026-03-16', '2026-04-16', '1 Month', 'Active', 'Beginner', '2026-03-15 09:34:32', '2026-03-15 09:34:32'),
+(7, 'Amatullah Imran Dhorajiwala', 'dhorajiwalaamatullah123@gmail.com', '98654479976', '2026-03-10', 'Female', 'sssdsds', 'Basic - 799/month', '2026-03-10', '2026-03-11', '1 Month', 'Active', 'Beginner', '2026-03-15 09:37:38', '2026-03-15 09:37:38');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+CREATE TABLE `password_reset_tokens` (
+  `id` int(11) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `password_reset_tokens`
+--
+
+INSERT INTO `password_reset_tokens` (`id`, `email`, `token`, `expires_at`, `used`, `created_at`) VALUES
+(1, 'faridadhorajiwala0636@gmail.com', 'eeb08cea9bc9f05816d81c31d8fc0e234219c60bdb2ba633cf46f5904fa9f001', '2026-03-16 10:34:33', 0, '2026-03-15 09:34:33'),
+(2, 'dhorajiwalaamatullah123@gmail.com', 'f7993f35235d6eba37429bfe339fd6a94f499e8e3d3dface3be3637206b8fd3e', '2026-03-16 10:37:38', 1, '2026-03-15 09:37:38');
 
 -- --------------------------------------------------------
 
@@ -235,6 +260,13 @@ CREATE TABLE `progress_reports` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `progress_reports`
+--
+
+INSERT INTO `progress_reports` (`id`, `member_id`, `date`, `weight`, `height`, `bmi`, `notes`, `recorded_by`, `created_at`) VALUES
+(1, 5, '2026-03-14', 40.00, 567.00, 1.20, '', 'trainer@gmail.com', '2026-03-14 18:31:02');
+
 -- --------------------------------------------------------
 
 --
@@ -271,6 +303,28 @@ INSERT INTO `staff` (`id`, `full_name`, `role`, `email`, `phone`, `join_date`, `
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `trainer_assignments`
+--
+
+CREATE TABLE `trainer_assignments` (
+  `id` int(11) NOT NULL,
+  `member_id` int(11) NOT NULL,
+  `trainer_id` int(11) NOT NULL,
+  `assigned_date` date NOT NULL DEFAULT curdate(),
+  `assigned_by` varchar(100) DEFAULT NULL,
+  `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `trainer_assignments`
+--
+
+INSERT INTO `trainer_assignments` (`id`, `member_id`, `trainer_id`, `assigned_date`, `assigned_by`, `status`) VALUES
+(1, 5, 1, '2026-03-15', 'admin@gmail.com', 'Active');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `trainer_sessions`
 --
 
@@ -294,7 +348,8 @@ CREATE TABLE `trainer_sessions` (
 --
 
 INSERT INTO `trainer_sessions` (`id`, `member_id`, `trainer_email`, `title`, `session_type`, `session_date`, `start_time`, `duration`, `location`, `notes`, `status`, `created_at`) VALUES
-(1, 4, 'trainer@gmail.com', 'sww', 'Consultation', '2026-03-14', '08:34:00', 60, 'ss', 'ss', 'Completed', '2026-03-14 02:04:57');
+(1, 4, 'trainer@gmail.com', 'sww', 'Consultation', '2026-03-14', '08:34:00', 60, 'ss', 'ss', 'Completed', '2026-03-14 02:04:57'),
+(2, 4, 'trainer@gmail.com', 'dsfd', 'Consultation', '2026-03-14', '01:53:00', 90, 'ss', 'ff', 'Upcoming', '2026-03-14 18:23:48');
 
 -- --------------------------------------------------------
 
@@ -318,7 +373,9 @@ INSERT INTO `users` (`id`, `role`, `email`, `password`) VALUES
 (2, 'customer', 'customer@gmail.com', 'customer123'),
 (5, 'trainer', 'trainer@gmail.com', 'trainer123'),
 (6, 'accountant', 'accountant@gmail.com', 'accountant123'),
-(7, 'receptionist', 'receptionist@gmail.com', 'reception123');
+(7, 'receptionist', 'receptionist@gmail.com', 'reception123'),
+(8, 'customer', 'faridadhorajiwala0636@gmail.com', ''),
+(9, 'customer', 'dhorajiwalaamatullah123@gmail.com', '$2y$10$wDT6UU7h1iWis6elmvzByesJ3nurVNMJvN3o0TOeK8iNr8dtD/OxS');
 
 -- --------------------------------------------------------
 
@@ -424,6 +481,14 @@ ALTER TABLE `members`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `token` (`token`),
+  ADD KEY `email` (`email`);
+
+--
 -- Indexes for table `payments`
 --
 ALTER TABLE `payments`
@@ -450,6 +515,14 @@ ALTER TABLE `progress_reports`
 ALTER TABLE `staff`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `trainer_assignments`
+--
+ALTER TABLE `trainer_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_member_trainer` (`member_id`),
+  ADD KEY `trainer_id` (`trainer_id`);
 
 --
 -- Indexes for table `trainer_sessions`
@@ -511,7 +584,13 @@ ALTER TABLE `equipment`
 -- AUTO_INCREMENT for table `members`
 --
 ALTER TABLE `members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `payments`
@@ -529,7 +608,7 @@ ALTER TABLE `payment_reminders`
 -- AUTO_INCREMENT for table `progress_reports`
 --
 ALTER TABLE `progress_reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `staff`
@@ -538,16 +617,22 @@ ALTER TABLE `staff`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT for table `trainer_assignments`
+--
+ALTER TABLE `trainer_assignments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `trainer_sessions`
 --
 ALTER TABLE `trainer_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `weight_progress`
@@ -594,6 +679,13 @@ ALTER TABLE `payment_reminders`
 --
 ALTER TABLE `progress_reports`
   ADD CONSTRAINT `progress_reports_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `trainer_assignments`
+--
+ALTER TABLE `trainer_assignments`
+  ADD CONSTRAINT `ta_member_fk` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ta_trainer_fk` FOREIGN KEY (`trainer_id`) REFERENCES `staff` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `trainer_sessions`
