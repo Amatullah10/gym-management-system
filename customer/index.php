@@ -1,50 +1,54 @@
 <?php
 session_start();
 require_once '../dbcon.php';
-
-if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'customer') {
     header("Location: ../index.php"); exit();
 }
-if ($_SESSION['role'] != 'customer') {
-    header("Location: ../index.php"); exit();
-}
-
 $page = 'dashboard';
 $email = mysqli_real_escape_string($conn, $_SESSION['email']);
-
-// Get this member's data
 $member = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM members WHERE email='$email'"));
 $member_id = $member['id'] ?? 0;
 
-// Attendance stats
+// Attendance
 $att_total   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id"))['c'];
 $att_present = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id AND status='Present'"))['c'];
-$att_pct     = $att_total > 0 ? round(($att_present / $att_total) * 100) : 0;
-$this_month  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id AND status='Present' AND DATE_FORMAT(attendance_date,'%Y-%m')=DATE_FORMAT(NOW(),'%Y-%m')"))['c'];
+$att_pct     = $att_total > 0 ? round(($att_present/$att_total)*100) : 0;
 
 // Latest progress
-$latest_progress = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM progress_reports WHERE member_id=$member_id ORDER BY date DESC LIMIT 1"));
+$progress = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM progress_reports WHERE member_id=$member_id ORDER BY date DESC LIMIT 1"));
 
 // Workout plan
 $workout = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM workout_plans WHERE member_id=$member_id"));
 
-// Last payment
-$last_payment = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM payments WHERE member_id=$member_id ORDER BY payment_date DESC LIMIT 1"));
+// Recent payments
+$payments_q = mysqli_query($conn, "SELECT * FROM payments WHERE member_id=$member_id ORDER BY payment_date DESC LIMIT 3");
+$payments = [];
+while($r = mysqli_fetch_assoc($payments_q)) $payments[] = $r;
 
-// Days to membership expiry
-$days_expiry = 0;
-if ($member && $member['end_date']) {
-    $days_expiry = (int)round((strtotime($member['end_date']) - strtotime(date('Y-m-d'))) / 86400);
+// Pending dues
+$pending = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE member_id=$member_id AND status='Due'"))['total'];
+$overdue_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM payments WHERE member_id=$member_id AND status='Overdue'"))['c'];
+
+// Days to expiry
+$days_expiry = $member ? (int)round((strtotime($member['end_date']) - strtotime(date('Y-m-d')))/86400) : 0;
+
+// BMI category
+function getBMIInfo($bmi) {
+    if (!$bmi) return ['—', '#aaa'];
+    if ($bmi < 18.5) return ['Underweight', '#f57c00'];
+    if ($bmi < 25)   return ['Normal', '#2e7d32'];
+    if ($bmi < 30)   return ['Overweight', '#f57c00'];
+    return ['Obese', '#d32f2f'];
 }
+[$bmi_cat, $bmi_color] = getBMIInfo($progress['bmi'] ?? null);
 
 include 'sidebar.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Dashboard - FitnessPro</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - NextGen Fitness</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -52,159 +56,146 @@ include 'sidebar.php';
   <link rel="stylesheet" href="../css/common.css">
 </head>
 <body>
-
 <div class="main-wrapper">
-  <div class="main-content">
+<div class="main-content">
 
-    <div class="page-header">
-      <h1 class="page-title">My Dashboard</h1>
-      <p class="page-subtitle">Welcome back, <?= htmlspecialchars($member['full_name'] ?? $email) ?>!</p>
+  <div class="page-header">
+    <h1 class="page-title">Dashboard Overview</h1>
+    <p class="page-subtitle">NextGen Fitness — Customer Portal</p>
+  </div>
+
+  <!-- Top 4 Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon <?= $member['membership_status']==='Active' ? 'green' : 'red' ?>">
+        <i class="fas fa-id-card"></i>
+      </div>
+      <div class="stat-info">
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">Membership Status</p>
+        <h3 style="font-size:22px;"><?= $member['membership_status'] ?? '—' ?></h3>
+        <p style="font-size:12px;color:#aaa;">Expires <?= $member ? date('M d, Y', strtotime($member['end_date'])) : '—' ?></p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="fas fa-weight-scale"></i></div>
+      <div class="stat-info">
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">Current Weight</p>
+        <h3 style="font-size:22px;"><?= $progress ? $progress['weight'].' kg' : '—' ?></h3>
+        <p style="font-size:12px;color:#aaa;"><?= $progress ? 'Updated '.date('M d', strtotime($progress['date'])) : 'Not recorded' ?></p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;color:<?= $bmi_color ?>;width:50px;height:50px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">
+        <i class="fas fa-percent"></i>
+      </div>
+      <div class="stat-info">
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">BMI Score</p>
+        <h3 style="font-size:22px;"><?= $progress['bmi'] ?? '—' ?></h3>
+        <p style="font-size:12px;color:<?= $bmi_color ?>;"><?= $bmi_cat ?></p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-triangle-exclamation"></i></div>
+      <div class="stat-info">
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">Pending Dues</p>
+        <h3 style="font-size:22px;">₹<?= number_format($pending) ?></h3>
+        <p style="font-size:12px;color:#aaa;"><?= $overdue_count ?> overdue payment<?= $overdue_count!=1?'s':'' ?></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Fitness Progress -->
+    <div class="col-md-7">
+      <div class="table-container" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h3 style="margin:0;font-size:16px;font-weight:700;">Fitness Progress</h3>
+          <a href="bmi.php" style="color:var(--active-color);font-size:13px;text-decoration:none;">View Details →</a>
+        </div>
+        <?php if($workout): ?>
+        <div style="margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+            <span style="font-weight:600;"><?= htmlspecialchars($workout['goal'] ?? 'Workout Goal') ?></span>
+            <span style="color:#999;"><?= $workout['progress'] ?>%</span>
+          </div>
+          <div style="height:8px;background:#f0f0f0;border-radius:10px;overflow:hidden;">
+            <div style="height:100%;background:var(--active-color);width:<?= $workout['progress'] ?>%;"></div>
+          </div>
+        </div>
+        <div style="margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+            <span style="font-weight:600;">Attendance Rate</span>
+            <span style="color:#999;"><?= $att_pct ?>%</span>
+          </div>
+          <div style="height:8px;background:#f0f0f0;border-radius:10px;overflow:hidden;">
+            <div style="height:100%;background:var(--active-color);width:<?= $att_pct ?>%;"></div>
+          </div>
+        </div>
+        <?php else: ?>
+        <div style="text-align:center;padding:30px;color:#aaa;">No workout plan assigned yet.</div>
+        <?php endif; ?>
+      </div>
     </div>
 
-    <!-- Membership Status Banner -->
-    <?php if ($member): ?>
-    <div class="table-container" style="padding:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
-      <div>
-        <div style="font-size:13px;color:#999;margin-bottom:4px;">Membership Status</div>
-        <div style="font-size:16px;font-weight:700;"><?= htmlspecialchars($member['membership_type']) ?></div>
-        <div style="font-size:12px;color:#666;margin-top:2px;">Member since <?= date('d M Y', strtotime($member['created_at'])) ?></div>
+    <!-- Recent Payments -->
+    <div class="col-md-5">
+      <div class="table-container" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+          <h3 style="margin:0;font-size:16px;font-weight:700;">Recent Payments</h3>
+          <a href="my-payments.php" style="color:var(--active-color);font-size:13px;text-decoration:none;">View All →</a>
+        </div>
+        <?php if(empty($payments)): ?>
+        <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No payment records.</div>
+        <?php else: foreach($payments as $p): ?>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f5f5f5;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:36px;height:36px;background:#fee;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+              <i class="fas fa-receipt" style="color:var(--active-color);font-size:14px;"></i>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($p['service']) ?></div>
+              <div style="font-size:11px;color:#aaa;"><?= date('M d, Y', strtotime($p['payment_date'])) ?></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;font-size:14px;">₹<?= number_format($p['amount']) ?></div>
+            <div style="font-size:11px;color:<?= $p['status']==='Paid'?'#2e7d32':($p['status']==='Overdue'?'#d32f2f':'#f57c00') ?>;"><?= $p['status'] ?></div>
+          </div>
+        </div>
+        <?php endforeach; endif; ?>
       </div>
-      <div style="text-align:right;">
-        <span class="status-badge <?= strtolower($member['membership_status']) ?>"><?= $member['membership_status'] ?></span>
-        <div style="font-size:12px;color:#666;margin-top:6px;">
-          <?php if ($days_expiry > 0): ?>
-            Expires in <strong><?= $days_expiry ?> days</strong> (<?= date('d M Y', strtotime($member['end_date'])) ?>)
-          <?php else: ?>
-            <strong style="color:#d32f2f;">Membership Expired</strong>
-          <?php endif; ?>
+    </div>
+
+    <!-- Today's Workout -->
+    <?php if($workout): ?>
+    <div class="col-12">
+      <div class="table-container" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+          <h3 style="margin:0;font-size:16px;font-weight:700;">Today's Workout</h3>
+          <a href="my-workout.php" style="color:var(--active-color);font-size:13px;text-decoration:none;">Full Plan →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+          <?php
+          $day_plan = htmlspecialchars($workout['current_plan'] ?? '');
+          $exercises = ['Bench Press','Squats','Pull-ups','Plank','Deadlift','Running'];
+          $muscles   = ['Chest','Legs','Back','Core','Full Body','Cardio'];
+          $sets      = ['4×10','4×12','3×8','3×60s','4×6','30 min'];
+          foreach(array_slice($exercises,0,4) as $i=>$ex):
+          ?>
+          <div style="background:#fff5f5;border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:8px;">💪</div>
+            <div style="font-weight:700;font-size:13px;"><?= $ex ?></div>
+            <div style="font-size:11px;color:#999;margin:3px 0;"><?= $muscles[$i] ?></div>
+            <span style="background:var(--active-color);color:white;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;"><?= $sets[$i] ?></span>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>
     <?php endif; ?>
-
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="fas fa-calendar-check"></i></div>
-        <div class="stat-info"><h3><?= $this_month ?></h3><p>This Month Visits</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-        <div class="stat-info"><h3><?= $att_pct ?>%</h3><p>Attendance Rate</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange"><i class="fas fa-weight-scale"></i></div>
-        <div class="stat-info"><h3><?= $latest_progress ? $latest_progress['weight'].' kg' : '—' ?></h3><p>Current Weight</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon <?= $days_expiry <= 7 ? 'red' : ($days_expiry <= 30 ? 'orange' : 'green') ?>">
-          <i class="fas fa-id-card"></i>
-        </div>
-        <div class="stat-info"><h3><?= max(0,$days_expiry) ?> days</h3><p>Membership Expiry</p></div>
-      </div>
-    </div>
-
-    <div class="row g-4">
-      <!-- Workout Plan -->
-      <div class="col-md-6">
-        <div class="table-container" style="padding:20px;">
-          <h3 style="margin:0 0 15px;font-size:16px;font-weight:600;"><i class="fas fa-dumbbell" style="color:var(--active-color);"></i> My Workout Plan</h3>
-          <?php if ($workout): ?>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:12px;color:#999;">Current Plan</div>
-            <div style="font-weight:600;font-size:15px;"><?= htmlspecialchars($workout['current_plan'] ?? 'Not Assigned') ?></div>
-          </div>
-          <div style="margin-bottom:15px;">
-            <div style="font-size:12px;color:#999;">Goal</div>
-            <div style="font-weight:600;"><?= htmlspecialchars($workout['goal'] ?? '—') ?></div>
-          </div>
-          <div>
-            <div style="font-size:12px;color:#999;margin-bottom:6px;">Progress</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="flex:1;height:8px;background:#f0f0f0;border-radius:10px;overflow:hidden;">
-                <div style="height:100%;background:var(--active-color);width:<?= $workout['progress'] ?? 0 ?>%;"></div>
-              </div>
-              <span style="font-weight:700;font-size:14px;"><?= $workout['progress'] ?? 0 ?>%</span>
-            </div>
-          </div>
-          <?php else: ?>
-          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No workout plan assigned yet.</div>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- Latest Progress -->
-      <div class="col-md-6">
-        <div class="table-container" style="padding:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-            <h3 style="margin:0;font-size:16px;font-weight:600;"><i class="fas fa-chart-line" style="color:var(--active-color);"></i> Latest Progress</h3>
-            <a href="bmi.php" style="font-size:12px;color:var(--active-color);text-decoration:none;">View All</a>
-          </div>
-          <?php if ($latest_progress): ?>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-            <div style="text-align:center;padding:15px;background:#fafafa;border-radius:10px;">
-              <div style="font-size:11px;color:#999;margin-bottom:4px;">Weight</div>
-              <div style="font-size:22px;font-weight:700;"><?= $latest_progress['weight'] ?> kg</div>
-            </div>
-            <div style="text-align:center;padding:15px;background:#fafafa;border-radius:10px;">
-              <div style="font-size:11px;color:#999;margin-bottom:4px;">BMI</div>
-              <div style="font-size:22px;font-weight:700;"><?= $latest_progress['bmi'] ?: '—' ?></div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:#aaa;margin-top:10px;text-align:center;">Recorded on <?= date('d M Y', strtotime($latest_progress['date'])) ?></div>
-          <?php else: ?>
-          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No progress recorded yet. <a href="weight.php" style="color:var(--active-color);">Add entry</a></div>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- Last Payment -->
-      <div class="col-md-6">
-        <div class="table-container" style="padding:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-            <h3 style="margin:0;font-size:16px;font-weight:600;"><i class="fas fa-receipt" style="color:var(--active-color);"></i> Last Payment</h3>
-            <a href="payment-history.php" style="font-size:12px;color:var(--active-color);text-decoration:none;">View All</a>
-          </div>
-          <?php if ($last_payment): ?>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <div style="font-size:22px;font-weight:700;">₹<?= number_format($last_payment['amount']) ?></div>
-              <div style="font-size:12px;color:#666;"><?= htmlspecialchars($last_payment['service']) ?> — <?= $last_payment['plan'] ?></div>
-              <div style="font-size:12px;color:#aaa;"><?= date('d M Y', strtotime($last_payment['payment_date'])) ?></div>
-            </div>
-            <span class="status-badge active">Paid</span>
-          </div>
-          <?php else: ?>
-          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No payment records found.</div>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- Quick Links -->
-      <div class="col-md-6">
-        <div class="table-container" style="padding:20px;">
-          <h3 style="margin:0 0 15px;font-size:16px;font-weight:600;"><i class="fas fa-bolt" style="color:var(--active-color);"></i> Quick Access</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <a href="view-attendance.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
-              <i class="fas fa-calendar-check" style="color:var(--active-color);width:16px;"></i> Attendance
-            </a>
-            <a href="weight.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
-              <i class="fas fa-weight-scale" style="color:var(--active-color);width:16px;"></i> Weight
-            </a>
-            <a href="bmi.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
-              <i class="fas fa-percent" style="color:var(--active-color);width:16px;"></i> BMI
-            </a>
-            <a href="payment-history.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
-              <i class="fas fa-receipt" style="color:var(--active-color);width:16px;"></i> Payments
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
-</div>
 
+</div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</body></html>

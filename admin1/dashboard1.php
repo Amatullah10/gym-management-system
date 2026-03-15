@@ -3,6 +3,7 @@ session_start();
 
 /* TEMP: simulate logged-in user */
 $_SESSION['role'] = 'admin';
+$page = 'dashboard';
 ?>
 
 
@@ -26,5 +27,3 @@ $_SESSION['role'] = 'admin';
 <div class="main-wrapper">
  
 </div>
-
-
