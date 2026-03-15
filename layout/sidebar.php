@@ -248,6 +248,10 @@ $user_menu = $menus[$user_role] ?? [];
               <i class="fas fa-arrow-right"></i> Add Equipment
             </a>
           </li>
+          <li class="<?php if($page=='equipment-maintenance') echo 'active'; ?>">
+            <a href="<?= $base ?>equipment-maintenance.php">
+              <i class="fas fa-arrow-right"></i> Maintenance Schedule
+            </a>
           </li>
           <li class="<?php if($page=='equipment-report') echo 'active'; ?>">
             <a href="<?= $base ?>equipment-report.php">
