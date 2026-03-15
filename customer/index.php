@@ -3,228 +3,208 @@ session_start();
 require_once '../dbcon.php';
 
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
-    header("Location: ../index.php");
-    exit();
+    header("Location: ../index.php"); exit();
 }
 if ($_SESSION['role'] != 'customer') {
-    header("Location: ../index.php");
-    exit();
+    header("Location: ../index.php"); exit();
 }
 
 $page = 'dashboard';
-$email = $_SESSION['email'];
+$email = mysqli_real_escape_string($conn, $_SESSION['email']);
 
-$member_res = mysqli_query($conn, "SELECT * FROM members WHERE email = '$email'");
-$member = mysqli_fetch_assoc($member_res);
+// Get this member's data
+$member = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM members WHERE email='$email'"));
+$member_id = $member['id'] ?? 0;
 
-<<<<<<< HEAD
-if (!$member) {
-    die("<div style='font-family:Inter,sans-serif; padding:40px; color:#d32f2f;'>
-        <h3>Account Error</h3>
-        <p>No member profile found for: <strong>$email</strong>. Please contact the receptionist.</p>
-        <a href='../auth/logout.php'>Logout</a>
-    </div>");
-=======
-// Total Members
-$total_members_query = "SELECT COUNT(*) as total FROM members";
-$total_result = mysqli_query($conn, $total_members_query);
-$total_members = mysqli_fetch_assoc($total_result)['total'];
+// Attendance stats
+$att_total   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id"))['c'];
+$att_present = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id AND status='Present'"))['c'];
+$att_pct     = $att_total > 0 ? round(($att_present / $att_total) * 100) : 0;
+$this_month  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM attendance WHERE member_id=$member_id AND status='Present' AND DATE_FORMAT(attendance_date,'%Y-%m')=DATE_FORMAT(NOW(),'%Y-%m')"))['c'];
 
-// Active Members
-$active_members_query = "SELECT COUNT(*) as active FROM members WHERE membership_status = 'Active'";
-$active_result = mysqli_query($conn, $active_members_query);
-$active_members = mysqli_fetch_assoc($active_result)['active'];
+// Latest progress
+$latest_progress = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM progress_reports WHERE member_id=$member_id ORDER BY date DESC LIMIT 1"));
 
-// Today's Attendance (FIXED)
-$today = date('Y-m-d');
-$attendance_query = "SELECT COUNT(*) as today FROM attendance WHERE attendance_date = '$today'";
-$attendance_result = mysqli_query($conn, $attendance_query);
-$today_attendance = mysqli_fetch_assoc($attendance_result)['today'];
+// Workout plan
+$workout = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM workout_plans WHERE member_id=$member_id"));
 
-// Total Staff
-$staff_query = "SELECT COUNT(*) as total FROM users WHERE role != 'customer'";
-$staff_result = mysqli_query($conn, $staff_query);
-$total_staff = mysqli_fetch_assoc($staff_result)['total'];
+// Last payment
+$last_payment = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM payments WHERE member_id=$member_id ORDER BY payment_date DESC LIMIT 1"));
 
-// Fetch recent members
-$recent_members_query = "SELECT id, full_name, email, phone, start_date, membership_status 
-FROM members 
-ORDER BY id DESC 
-LIMIT 5";
-$recent_result = mysqli_query($conn, $recent_members_query);
-$recent_members = [];
-while($row = mysqli_fetch_assoc($recent_result)) {
-    $recent_members[] = $row;
->>>>>>> 50046e0 (Customer changes)
-}
-$member_id = $member['id'];
-
-$att_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM attendance WHERE member_id = '$member_id'");
-$total_attendance = mysqli_fetch_assoc($att_res)['total'];
-
-$month_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM attendance WHERE member_id = '$member_id' AND MONTH(check_in) = MONTH(NOW()) AND YEAR(check_in) = YEAR(NOW())");
-$month_attendance = mysqli_fetch_assoc($month_res)['total'];
-
-$due_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM payments WHERE member_id = '$member_id' AND status = 'due'");
-$due_count = mysqli_fetch_assoc($due_res)['total'];
-
-$overdue_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM payments WHERE member_id = '$member_id' AND status = 'overdue'");
-$overdue_count = mysqli_fetch_assoc($overdue_res)['total'];
-
-$weight_res = mysqli_query($conn, "SELECT weight FROM weight_progress WHERE member_id = '$member_id' ORDER BY recorded_date DESC LIMIT 1");
-$latest_weight = mysqli_fetch_assoc($weight_res)['weight'] ?? null;
-
-$bmi_res = mysqli_query($conn, "SELECT bmi FROM bmi_progress WHERE member_id = '$member_id' ORDER BY recorded_date DESC LIMIT 1");
-$latest_bmi = mysqli_fetch_assoc($bmi_res)['bmi'] ?? null;
-
-$days_remaining = 0;
-if ($member['end_date']) {
-    $days_remaining = round((strtotime($member['end_date']) - strtotime(date('Y-m-d'))) / 86400);
+// Days to membership expiry
+$days_expiry = 0;
+if ($member && $member['end_date']) {
+    $days_expiry = (int)round((strtotime($member['end_date']) - strtotime(date('Y-m-d'))) / 86400);
 }
 
-$recent_att = [];
-$res = mysqli_query($conn, "SELECT * FROM attendance WHERE member_id = '$member_id' ORDER BY check_in DESC LIMIT 5");
-while ($row = mysqli_fetch_assoc($res)) { $recent_att[] = $row; }
-
-$recent_pay = [];
-$res2 = mysqli_query($conn, "SELECT * FROM payments WHERE member_id = '$member_id' ORDER BY payment_date DESC LIMIT 5");
-while ($row = mysqli_fetch_assoc($res2)) { $recent_pay[] = $row; }
+include 'sidebar.php';
 ?>
-<?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard - FitnessPro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sidebar.css">
+  <link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
 
 <div class="main-wrapper">
   <div class="main-content">
 
     <div class="page-header">
+      <h1 class="page-title">My Dashboard</h1>
+      <p class="page-subtitle">Welcome back, <?= htmlspecialchars($member['full_name'] ?? $email) ?>!</p>
+    </div>
+
+    <!-- Membership Status Banner -->
+    <?php if ($member): ?>
+    <div class="table-container" style="padding:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
       <div>
-        <h1 class="page-title">My Dashboard</h1>
-        <p class="page-subtitle">Welcome back, <strong><?= htmlspecialchars($member['full_name']) ?></strong>!</p>
+        <div style="font-size:13px;color:#999;margin-bottom:4px;">Membership Status</div>
+        <div style="font-size:16px;font-weight:700;"><?= htmlspecialchars($member['membership_type']) ?></div>
+        <div style="font-size:12px;color:#666;margin-top:2px;">Member since <?= date('d M Y', strtotime($member['created_at'])) ?></div>
       </div>
-    </div>
-
-    <!-- Membership Status -->
-    <div class="section" style="margin-bottom:25px;">
-      <h3><i class="fa-solid fa-id-card" style="color:var(--active-color); margin-right:8px;"></i>Membership Status</h3>
-      <p class="section-subtitle">Your current membership details</p>
-      <div class="form-row">
-        <div>
-          <label>Plan</label>
-          <p style="font-size:15px; font-weight:600; margin:0;"><?= htmlspecialchars($member['membership_type']) ?></p>
-        </div>
-        <div>
-          <label>Start Date</label>
-          <p style="font-size:15px; font-weight:600; margin:0;"><?= $member['start_date'] ?></p>
-        </div>
-        <div>
-          <label>End Date</label>
-          <p style="font-size:15px; font-weight:600; margin:0;"><?= $member['end_date'] ?></p>
-        </div>
-        <div>
-          <label>Status</label>
-          <span class="status-badge <?= strtolower($member['membership_status']) == 'active' ? 'active' : 'expired' ?>">
-            <?= strtoupper($member['membership_status']) ?>
-          </span>
-        </div>
-        <div>
-          <label>Days Remaining</label>
-          <p style="font-size:15px; font-weight:600; margin:0; color:<?= $days_remaining <= 7 ? '#d32f2f' : ($days_remaining <= 30 ? '#f57c00' : '#2e7d32') ?>;">
-            <?= max(0, $days_remaining) ?> days
-          </p>
+      <div style="text-align:right;">
+        <span class="status-badge <?= strtolower($member['membership_status']) ?>"><?= $member['membership_status'] ?></span>
+        <div style="font-size:12px;color:#666;margin-top:6px;">
+          <?php if ($days_expiry > 0): ?>
+            Expires in <strong><?= $days_expiry ?> days</strong> (<?= date('d M Y', strtotime($member['end_date'])) ?>)
+          <?php else: ?>
+            <strong style="color:#d32f2f;">Membership Expired</strong>
+          <?php endif; ?>
         </div>
       </div>
     </div>
+    <?php endif; ?>
 
-    <!-- Stats - Only their own data -->
+    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon red"><i class="fa-solid fa-calendar-check"></i></div>
-        <div class="stat-info"><h3><?= $total_attendance ?></h3><p>Total Attendance</p></div>
+        <div class="stat-icon red"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-info"><h3><?= $this_month ?></h3><p>This Month Visits</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-calendar-days"></i></div>
-        <div class="stat-info"><h3><?= $month_attendance ?></h3><p>This Month Attendance</p></div>
+        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info"><h3><?= $att_pct ?>%</h3><p>Attendance Rate</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon orange"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-        <div class="stat-info"><h3><?= $due_count ?></h3><p>Due Payments</p></div>
+        <div class="stat-icon orange"><i class="fas fa-weight-scale"></i></div>
+        <div class="stat-info"><h3><?= $latest_progress ? $latest_progress['weight'].' kg' : '—' ?></h3><p>Current Weight</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon <?= $overdue_count > 0 ? 'red' : 'green' ?>"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="stat-info"><h3><?= $overdue_count ?></h3><p>Overdue Payments</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-weight-scale"></i></div>
-        <div class="stat-info"><h3><?= $latest_weight ? $latest_weight.' kg' : 'N/A' ?></h3><p>Latest Weight</p></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange"><i class="fa-solid fa-heart-pulse"></i></div>
-        <div class="stat-info"><h3><?= $latest_bmi ? $latest_bmi : 'N/A' ?></h3><p>Latest BMI</p></div>
+        <div class="stat-icon <?= $days_expiry <= 7 ? 'red' : ($days_expiry <= 30 ? 'orange' : 'green') ?>">
+          <i class="fas fa-id-card"></i>
+        </div>
+        <div class="stat-info"><h3><?= max(0,$days_expiry) ?> days</h3><p>Membership Expiry</p></div>
       </div>
     </div>
 
-    <!-- Recent Attendance -->
-    <div class="members-table-container" style="margin-bottom:25px;">
-      <div class="table-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>Recent Attendance</h3>
-        <a href="viewattendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
-      </div>
-      <table class="members-table">
-        <thead><tr><th>#</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Duration</th></tr></thead>
-        <tbody>
-          <?php if (!empty($recent_att)): ?>
-            <?php foreach ($recent_att as $i => $r):
-              $duration = '-';
-              if ($r['check_out']) {
-                $diff = strtotime($r['check_out']) - strtotime($r['check_in']);
-                $duration = floor($diff/3600).'h '.floor(($diff%3600)/60).'m';
-              }
-            ?>
-              <tr>
-                <td><?= $i+1 ?></td>
-                <td><?= date('d-m-Y', strtotime($r['check_in'])) ?></td>
-                <td><?= date('h:i A', strtotime($r['check_in'])) ?></td>
-                <td><?= $r['check_out'] ? date('h:i A', strtotime($r['check_out'])) : '<span style="color:#aaa">Not recorded</span>' ?></td>
-                <td><?= $duration ?></td>
-              </tr>
-            <?php endforeach; ?>
+    <div class="row g-4">
+      <!-- Workout Plan -->
+      <div class="col-md-6">
+        <div class="table-container" style="padding:20px;">
+          <h3 style="margin:0 0 15px;font-size:16px;font-weight:600;"><i class="fas fa-dumbbell" style="color:var(--active-color);"></i> My Workout Plan</h3>
+          <?php if ($workout): ?>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:12px;color:#999;">Current Plan</div>
+            <div style="font-weight:600;font-size:15px;"><?= htmlspecialchars($workout['current_plan'] ?? 'Not Assigned') ?></div>
+          </div>
+          <div style="margin-bottom:15px;">
+            <div style="font-size:12px;color:#999;">Goal</div>
+            <div style="font-weight:600;"><?= htmlspecialchars($workout['goal'] ?? '—') ?></div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#999;margin-bottom:6px;">Progress</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:8px;background:#f0f0f0;border-radius:10px;overflow:hidden;">
+                <div style="height:100%;background:var(--active-color);width:<?= $workout['progress'] ?? 0 ?>%;"></div>
+              </div>
+              <span style="font-weight:700;font-size:14px;"><?= $workout['progress'] ?? 0 ?>%</span>
+            </div>
+          </div>
           <?php else: ?>
-            <tr><td colspan="5" class="text-center" style="padding:20px; color:#aaa;">No attendance records yet.</td></tr>
+          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No workout plan assigned yet.</div>
           <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
 
-    <!-- Recent Payments -->
-    <div class="members-table-container">
-      <div class="table-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>Recent Payments</h3>
-        <a href="payment-history.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
-      </div>
-      <table class="members-table">
-        <thead><tr><th>#</th><th>Amount</th><th>Due Date</th><th>Method</th><th>Status</th></tr></thead>
-        <tbody>
-          <?php if (!empty($recent_pay)): ?>
-            <?php foreach ($recent_pay as $i => $r):
-              $badge = $r['status'] == 'paid' ? 'active' : ($r['status'] == 'overdue' ? 'expired' : 'pending');
-            ?>
-              <tr>
-                <td><?= $i+1 ?></td>
-                <td><strong>₹<?= number_format($r['amount'], 2) ?></strong></td>
-                <td><?= $r['due_date'] ?></td>
-                <td><?= $r['payment_method'] ?: '-' ?></td>
-                <td><span class="status-badge <?= $badge ?>"><?= strtoupper($r['status']) ?></span></td>
-              </tr>
-            <?php endforeach; ?>
+      <!-- Latest Progress -->
+      <div class="col-md-6">
+        <div class="table-container" style="padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="margin:0;font-size:16px;font-weight:600;"><i class="fas fa-chart-line" style="color:var(--active-color);"></i> Latest Progress</h3>
+            <a href="bmi.php" style="font-size:12px;color:var(--active-color);text-decoration:none;">View All</a>
+          </div>
+          <?php if ($latest_progress): ?>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div style="text-align:center;padding:15px;background:#fafafa;border-radius:10px;">
+              <div style="font-size:11px;color:#999;margin-bottom:4px;">Weight</div>
+              <div style="font-size:22px;font-weight:700;"><?= $latest_progress['weight'] ?> kg</div>
+            </div>
+            <div style="text-align:center;padding:15px;background:#fafafa;border-radius:10px;">
+              <div style="font-size:11px;color:#999;margin-bottom:4px;">BMI</div>
+              <div style="font-size:22px;font-weight:700;"><?= $latest_progress['bmi'] ?: '—' ?></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#aaa;margin-top:10px;text-align:center;">Recorded on <?= date('d M Y', strtotime($latest_progress['date'])) ?></div>
           <?php else: ?>
-            <tr><td colspan="5" class="text-center" style="padding:20px; color:#aaa;">No payment records yet.</td></tr>
+          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No progress recorded yet. <a href="weight.php" style="color:var(--active-color);">Add entry</a></div>
           <?php endif; ?>
-        </tbody>
-      </table>
+        </div>
+      </div>
+
+      <!-- Last Payment -->
+      <div class="col-md-6">
+        <div class="table-container" style="padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="margin:0;font-size:16px;font-weight:600;"><i class="fas fa-receipt" style="color:var(--active-color);"></i> Last Payment</h3>
+            <a href="payment-history.php" style="font-size:12px;color:var(--active-color);text-decoration:none;">View All</a>
+          </div>
+          <?php if ($last_payment): ?>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:22px;font-weight:700;">₹<?= number_format($last_payment['amount']) ?></div>
+              <div style="font-size:12px;color:#666;"><?= htmlspecialchars($last_payment['service']) ?> — <?= $last_payment['plan'] ?></div>
+              <div style="font-size:12px;color:#aaa;"><?= date('d M Y', strtotime($last_payment['payment_date'])) ?></div>
+            </div>
+            <span class="status-badge active">Paid</span>
+          </div>
+          <?php else: ?>
+          <div style="text-align:center;padding:20px;color:#aaa;font-size:14px;">No payment records found.</div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-md-6">
+        <div class="table-container" style="padding:20px;">
+          <h3 style="margin:0 0 15px;font-size:16px;font-weight:600;"><i class="fas fa-bolt" style="color:var(--active-color);"></i> Quick Access</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <a href="view-attendance.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
+              <i class="fas fa-calendar-check" style="color:var(--active-color);width:16px;"></i> Attendance
+            </a>
+            <a href="weight.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
+              <i class="fas fa-weight-scale" style="color:var(--active-color);width:16px;"></i> Weight
+            </a>
+            <a href="bmi.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
+              <i class="fas fa-percent" style="color:var(--active-color);width:16px;"></i> BMI
+            </a>
+            <a href="payment-history.php" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;text-decoration:none;color:#333;font-size:13px;font-weight:500;">
+              <i class="fas fa-receipt" style="color:var(--active-color);width:16px;"></i> Payments
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
