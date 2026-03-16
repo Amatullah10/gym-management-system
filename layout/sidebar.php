@@ -111,16 +111,9 @@ $user_menu = $menus[$user_role] ?? [];
               <i class="fas fa-arrow-right"></i> Member Entry Form
             </a>
           </li>
-          <li class="<?php if($page=='members-remove') echo 'active'; ?>">
-            <a href="../modules/remove-member.php">
-              <i class="fas fa-arrow-right"></i> Remove Member
-            </a>
+          
           </li>
-          <li class="<?php if($page=='members-update') echo 'active'; ?>">
-            <a href="../modules/update-member.php">
-              <i class="fas fa-arrow-right"></i> Update Member Details
-            </a>
-          </li>
+          
           <?php endif; ?>
         </ul>
       </li>
