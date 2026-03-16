@@ -218,16 +218,8 @@ $user_menu = $menus[$user_role] ?? [];
               <i class="fas fa-arrow-right"></i> All Payment Records
             </a>
           </li>
-          <li class="<?php if($page=='payment-form') echo 'active'; ?>">
-            <a href="../modules/payment-form.php">
-              <i class="fas fa-arrow-right"></i> Add Payment
-            </a>
-          </li>
-          <li class="<?php if($page=='payment-receipt') echo 'active'; ?>">
-            <a href="../modules/payment-receipt.php">
-              <i class="fas fa-arrow-right"></i> Payment Receipt
-            </a>
-          </li>
+          
+          
         </ul>
       </li>
       <?php endif; ?>
