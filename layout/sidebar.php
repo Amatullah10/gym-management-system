@@ -219,7 +219,7 @@ $user_menu = $menus[$user_role] ?? [];
             </a>
           </li>
           <li class="<?php if($page=='payment-form') echo 'active'; ?>">
-            <a href="../modules/payments.php">
+            <a href="../modules/payment-form.php">
               <i class="fas fa-arrow-right"></i> Add Payment
             </a>
           </li>
