@@ -52,14 +52,16 @@ $error_message   = isset($_GET['error'])   ? $_GET['error']   : '';
   <div class="main-content">
 
     <div class="page-header">
-      <div>
-        <h1 class="page-title">Equipment Management</h1>
-        <p class="page-subtitle">View and manage all gym equipment</p>
-      </div>
-      <div>
-        <a href="equipment-add.php" class="btn app-btn-primary">
-          <i class="fa-solid fa-plus"></i> Add Equipment
-        </a>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="page-title">Equipment Management</h1>
+          <p class="page-subtitle">View and manage all gym equipment</p>
+        </div>
+        <div>
+          <a href="equipment-add.php" class="btn app-btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Equipment
+          </a>
+        </div>
       </div>
     </div>
 
@@ -94,7 +96,7 @@ $error_message   = isset($_GET['error'])   ? $_GET['error']   : '';
       </div>
     </div>
 
-    <!-- Search & Filter (INLINE - MATCHES STAFF) -->
+    <!-- Search & Filter -->
     <div class="d-flex gap-3 mb-4">
       <div class="search-box flex-grow-1">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -113,29 +115,34 @@ $error_message   = isset($_GET['error'])   ? $_GET['error']   : '';
       <div class="table-header">
         <h3>All Equipment</h3>
       </div>
-      <table class="members-table">
+      <div style="overflow-x:auto;">
+      <table class="members-table" style="min-width:1000px;">
         <thead>
           <tr>
             <th>#</th>
             <th>Equipment Name</th>
-            <th>Quantity</th>
+            <th>Total Quantity</th>
+            <th>Working Units</th>
             <th>Status</th>
+            <th>Purchase Date</th>
+            <th>Purchase Amount</th>
             <th>Added On</th>
             <th>Actions</th>
+            <th>Description</th>
           </tr>
         </thead>
         <tbody id="equipmentTableBody">
           <?php if (!empty($equipment)): ?>
             <?php foreach ($equipment as $i => $e):
-              if ($e['status'] == 'Working')         { $badge = 'active'; $icon = 'circle-check'; }
+              if ($e['status'] == 'Working')         { $badge = 'active';   $icon = 'circle-check'; }
               elseif ($e['status'] == 'Maintenance') { $badge = 'inactive'; $icon = 'screwdriver-wrench'; }
-              else                                   { $badge = 'expired'; $icon = 'circle-xmark'; }
+              else                                   { $badge = 'expired';  $icon = 'circle-xmark'; }
             ?>
             <tr data-status="<?= strtolower($e['status']) ?>">
-              <td><?= $i+1 ?></td>
+              <td><?= $i + 1 ?></td>
               <td>
                 <div class="member-cell">
-                  <div class="member-avatar" style="background:#f3f6f9; color:#555;">
+                  <div class="member-avatar">
                     <i class="fa-solid fa-dumbbell"></i>
                   </div>
                   <div class="member-info">
@@ -144,7 +151,10 @@ $error_message   = isset($_GET['error'])   ? $_GET['error']   : '';
                 </div>
               </td>
               <td><?= $e['quantity'] ?></td>
+              <td><?= $e['working_units'] ?? 0 ?></td>
               <td><span class="status-badge <?= $badge ?>"><i class="fa-solid fa-<?= $icon ?>"></i> <?= $e['status'] ?></span></td>
+              <td class="date-display"><?= !empty($e['purchase_date']) ? date('d M Y', strtotime($e['purchase_date'])) : '—' ?></td>
+              <td><?= !empty($e['purchase_amount']) ? '₹' . number_format($e['purchase_amount'], 2) : '—' ?></td>
               <td class="date-display"><?= date('d M Y', strtotime($e['created_at'])) ?></td>
               <td>
                 <div class="action-buttons">
@@ -158,13 +168,15 @@ $error_message   = isset($_GET['error'])   ? $_GET['error']   : '';
                   </button>
                 </div>
               </td>
+              <td><?= !empty($e['description']) ? htmlspecialchars($e['description']) : '—' ?></td>
             </tr>
             <?php endforeach; ?>
           <?php else: ?>
-            <tr><td colspan="6" class="text-center" style="padding:30px; color:#aaa;">No equipment found.</td></tr>
+            <tr><td colspan="10" class="text-center">No equipment found.</td></tr>
           <?php endif; ?>
         </tbody>
       </table>
+      </div>
     </div>
 
   </div>
@@ -208,7 +220,7 @@ function deleteEquipment(id, name) {
   new bootstrap.Modal(document.getElementById('deleteEquipmentModal')).show();
 }
 
-// SEARCH + FILTER (JavaScript - like staff)
+// SEARCH + FILTER
 document.getElementById('searchInput').addEventListener('keyup', filterTable);
 document.getElementById('statusFilter').addEventListener('change', filterTable);
 

@@ -9,6 +9,16 @@ $page    = 'equipment-list';
 $success = '';
 $error   = '';
 
+// Get equipment id from URL
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if (!$id) { header("Location: equipment-list.php"); exit(); }
+
+// Fetch existing equipment data
+$res = mysqli_query($conn, "SELECT * FROM equipment WHERE id = $id");
+if (!$res || mysqli_num_rows($res) === 0) { header("Location: equipment-list.php"); exit(); }
+$equipment = mysqli_fetch_assoc($res);
+
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $equipment_name  = mysqli_real_escape_string($conn, $_POST['equipment_name']);
     $quantity        = (int)$_POST['quantity'];
@@ -25,13 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($working_units > $quantity) {
         $error = "Working units cannot be more than total quantity!";
     } else {
-        $insert = mysqli_query($conn, "INSERT INTO equipment (equipment_name, quantity, working_units, status, purchase_date, purchase_amount, description) 
-            VALUES ('$equipment_name', '$quantity', '$working_units', '$status', '$purchase_date', '$purchase_amount', '$description')");
-        if ($insert) {
-            header("Location: equipment-list.php?msg=added");
+        $update = mysqli_query($conn, "UPDATE equipment SET 
+            equipment_name  = '$equipment_name',
+            quantity        = '$quantity',
+            working_units   = '$working_units',
+            status          = '$status',
+            purchase_date   = '$purchase_date',
+            purchase_amount = '$purchase_amount',
+            description     = '$description'
+            WHERE id = $id");
+        if ($update) {
+            header("Location: equipment-list.php?success=Equipment updated successfully!");
             exit();
         } else {
-            $error = "Failed to add equipment! Error: " . mysqli_error($conn);
+            $error = "Failed to update equipment! Error: " . mysqli_error($conn);
         }
     }
 }
@@ -41,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Equipment - Gym Management</title>
+  <title>Edit Equipment - Gym Management</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -59,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Add Equipment</h1>
-        <p class="page-subtitle">Register new gym equipment</p>
+        <h1 class="page-title">Edit Equipment</h1>
+        <p class="page-subtitle">Update equipment details</p>
       </div>
     </div>
 
@@ -76,20 +93,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="section">
           <h3>Equipment Details</h3>
-          <p class="section-subtitle">Enter the equipment information below</p>
+          <p class="section-subtitle">Update the equipment information below</p>
 
           <div class="form-row">
             <div>
               <label>Equipment Name *</label>
-              <input type="text" name="equipment_name" placeholder="e.g., Treadmill, Dumbbells, Bench Press" required>
+              <input type="text" name="equipment_name" value="<?= htmlspecialchars($equipment['equipment_name']) ?>" placeholder="e.g., Treadmill, Dumbbells, Bench Press" required>
             </div>
             <div>
               <label>Quantity *</label>
-              <input type="number" name="quantity" min="1" value="1" required>
+              <input type="number" name="quantity" min="1" value="<?= $equipment['quantity'] ?>" required>
             </div>
             <div>
               <label>Working Units *</label>
-              <input type="number" name="working_units" min="0" value="1" required>
+              <input type="number" name="working_units" min="0" value="<?= $equipment['working_units'] ?? 0 ?>" required>
             </div>
           </div>
 
@@ -97,35 +114,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div>
               <label>Status *</label>
               <select name="status" required>
-                <option value="Working">Working</option>
-                <option value="Maintenance">Under Maintenance</option>
-                <option value="Out of Order">Out of Order</option>
+                <option value="Working"      <?= $equipment['status'] == 'Working'      ? 'selected' : '' ?>>Working</option>
+                <option value="Maintenance"  <?= $equipment['status'] == 'Maintenance'  ? 'selected' : '' ?>>Under Maintenance</option>
+                <option value="Out of Order" <?= $equipment['status'] == 'Out of Order' ? 'selected' : '' ?>>Out of Order</option>
               </select>
             </div>
             <div>
               <label>Purchase Date</label>
-              <input type="date" name="purchase_date">
+              <input type="date" name="purchase_date" value="<?= htmlspecialchars($equipment['purchase_date'] ?? '') ?>">
             </div>
           </div>
 
           <div class="form-row">
             <div>
               <label>Purchase Amount (₹)</label>
-              <input type="number" name="purchase_amount" min="0" step="0.01" placeholder="e.g. 25000">
+              <input type="number" name="purchase_amount" min="0" step="0.01" placeholder="e.g. 25000" value="<?= htmlspecialchars($equipment['purchase_amount'] ?? '') ?>">
             </div>
           </div>
 
           <div class="form-row">
             <div>
               <label>Description / Notes</label>
-              <textarea name="description" placeholder="Any additional notes about the equipment..."></textarea>
+              <textarea name="description" placeholder="Any additional notes about the equipment..."><?= htmlspecialchars($equipment['description'] ?? '') ?></textarea>
             </div>
           </div>
 
         </div>
 
         <div class="flex gap-2 mt-10">
-          <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-plus"></i> Add Equipment</button>
+          <button type="submit" class="btn app-btn-primary"><i class="fa-solid fa-floppy-disk"></i> Update Equipment</button>
           <a href="equipment-list.php" class="btn app-btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to List</a>
         </div>
 

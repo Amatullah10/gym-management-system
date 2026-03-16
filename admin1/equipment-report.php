@@ -13,7 +13,7 @@ $working      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FRO
 $maintenance  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Maintenance'"))['t'];
 $out_of_order = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Out of Order'"))['t'];
 $total_qty    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment"))['t'];
-$working_qty  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment WHERE status='Working'"))['t'];
+$working_qty  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(working_units) as t FROM equipment"))['t'];
 
 $all_equipment = [];
 $res = mysqli_query($conn, "SELECT * FROM equipment ORDER BY status ASC, equipment_name ASC");
@@ -60,7 +60,7 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
       </div>
     </div>
 
-    <div class="stats-grid" style="margin-bottom:25px;">
+    <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon red"><i class="fa-solid fa-layer-group"></i></div>
         <div class="stat-info"><h3><?= $total_qty ?? 0 ?></h3><p>Total Units</p></div>
@@ -71,7 +71,7 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
       </div>
     </div>
 
-    <div class="members-table-container mb-20" style="margin-bottom:25px;">
+    <div class="members-table-container mb-20">
       <div class="table-header">
         <h3>Status Breakdown</h3>
       </div>
@@ -117,7 +117,8 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
             <tr>
               <th>#</th>
               <th>Equipment Name</th>
-              <th>Quantity</th>
+              <th>Total Quantity</th>
+              <th>Working Units</th>
               <th>Status</th>
               <th>Added On</th>
             </tr>
@@ -130,7 +131,7 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
                 else                                   { $badge = 'expired';  $icon = 'circle-xmark'; }
               ?>
               <tr>
-                <td><?= $i+1 ?></td>
+                <td><?= $i + 1 ?></td>
                 <td>
                   <div class="member-cell">
                     <div class="member-avatar" style="background:#f3f6f9; color:#555; font-size:18px;">
@@ -142,12 +143,13 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
                   </div>
                 </td>
                 <td><?= $e['quantity'] ?></td>
+                <td><?= $e['working_units'] ?? 0 ?></td>
                 <td><span class="status-badge <?= $badge ?>"><i class="fa-solid fa-<?= $icon ?>"></i> <?= $e['status'] ?></span></td>
                 <td class="date-display"><?= date('d M Y', strtotime($e['created_at'])) ?></td>
               </tr>
               <?php endforeach; ?>
             <?php else: ?>
-              <tr><td colspan="5" class="text-center" style="padding:30px; color:#aaa;">No equipment found.</td></tr>
+              <tr><td colspan="6" class="text-center" style="padding:30px; color:#aaa;">No equipment found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -175,11 +177,11 @@ function exportToExcel() {
         ['Working Units', <?= $working_qty ?? 0 ?>],
         [],
         ['Full Equipment List'],
-        ['#', 'Equipment Name', 'Quantity', 'Status', 'Added On']
+        ['#', 'Equipment Name', 'Total Quantity', 'Working Units', 'Status', 'Added On']
     ];
 
     equipmentData.forEach((e, i) => {
-        rows.push([i + 1, e.equipment_name, e.quantity, e.status, e.created_at]);
+        rows.push([i + 1, e.equipment_name, e.quantity, e.working_units ?? 0, e.status, e.created_at]);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
