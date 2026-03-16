@@ -8,70 +8,66 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) {
     exit();
 }
 
-$page = 'members'; // For active sidebar highlight
+$page = 'member-entry'; // For active sidebar highlight
 
-// Handle trainer assignment
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_trainer'])) {
-    $m_id = (int)$_POST['assign_member_id'];
-    $t_id = (int)$_POST['assign_trainer_id'];
-    $by   = mysqli_real_escape_string($conn, $_SESSION['email']);
-    if ($t_id === 0) {
-        mysqli_query($conn, "DELETE FROM trainer_assignments WHERE member_id=$m_id");
+// For active sidebar highlight
+
+$success_message = '';
+$error_message = '';
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // Get form data
+    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $dob = mysqli_real_escape_string($conn, $_POST['dob']);
+    $gender = mysqli_real_escape_string($conn, $_POST['gender']);
+    $address = mysqli_real_escape_string($conn, $_POST['address']);
+    $membership_type = mysqli_real_escape_string($conn, $_POST['membership_type']);
+    $start_date = mysqli_real_escape_string($conn, $_POST['start_date']);
+    $end_date = mysqli_real_escape_string($conn, $_POST['end_date']);
+    $duration = mysqli_real_escape_string($conn, $_POST['duration']);
+    $fitness_level = mysqli_real_escape_string($conn, $_POST['fitness_level']);
+    
+    // Check if email already exists
+    $check_email = "SELECT id FROM members WHERE email = '$email'";
+    $result = mysqli_query($conn, $check_email);
+    
+    if (mysqli_num_rows($result) > 0) {
+        $error_message = "Email already exists! Please use a different email.";
     } else {
-        $exists = mysqli_num_rows(mysqli_query($conn, "SELECT id FROM trainer_assignments WHERE member_id=$m_id"));
-        if ($exists) {
-            mysqli_query($conn, "UPDATE trainer_assignments SET trainer_id=$t_id, assigned_by='$by', assigned_date=CURDATE(), status='Active' WHERE member_id=$m_id");
+        // Insert member into database
+        $sql = "INSERT INTO members (full_name, email, phone, dob, gender, address, membership_type, start_date, end_date, duration, fitness_level, membership_status) 
+                VALUES ('$full_name', '$email', '$phone', '$dob', '$gender', '$address', '$membership_type', '$start_date', '$end_date', '$duration', '$fitness_level', 'Active')";
+        
+        if (mysqli_query($conn, $sql)) {
+            // Create user account with empty password (they set it via email link)
+            $check_user = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
+            if (mysqli_num_rows($check_user) === 0) {
+                mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '')");
+            }
+            // Send welcome email with set-password link
+            require_once '../auth/mailer.php';
+            $sent = sendSetPasswordEmail($email, $full_name, $conn);
+            $success_message = $sent
+                ? "Member registered! Welcome email sent to <strong>$email</strong> to set their password."
+                : "Member registered! Could not send email — share this link manually: <a href='http://localhost/gym-management-system/auth/set-password.php' target='_blank'>Set Password Page</a>";
+            header("refresh:3;url=members.php");
         } else {
-            mysqli_query($conn, "INSERT INTO trainer_assignments (member_id, trainer_id, assigned_by) VALUES ($m_id, $t_id, '$by')");
+            $error_message = "Error: " . mysqli_error($conn);
         }
     }
-    header("Location: members.php?success=Trainer assigned successfully!"); exit();
 }
-
-// Fetch trainers for assign modal
-$trainers_q = mysqli_query($conn, "SELECT s.id, s.full_name FROM staff s JOIN users u ON u.email=s.email WHERE u.role='trainer' AND s.status='Active' ORDER BY s.full_name");
-$trainers = [];
-while($r = mysqli_fetch_assoc($trainers_q)) $trainers[] = $r;
-
-// Fetch all members from database with assigned trainer
-$sql = "SELECT m.*, s.full_name as trainer_name, ta.trainer_id
-        FROM members m
-        LEFT JOIN trainer_assignments ta ON m.id = ta.member_id AND ta.status='Active'
-        LEFT JOIN staff s ON s.id = ta.trainer_id
-        ORDER BY m.created_at DESC";
-$result = mysqli_query($conn, $sql);
-
-$members = [];
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
-        $members[] = $row;
-    }
-}
-
-// Calculate stats
-$total_members = count($members);
-$active_members = 0;
-$inactive_members = 0;
-
-foreach ($members as $member) {
-    if ($member['membership_status'] === 'Active') {
-        $active_members++;
-    } else {
-        $inactive_members++;
-    }
-}
-
-// Success message after registration/update
-$success_message = isset($_GET['success']) ? $_GET['success'] : '';
 ?>
-<!DOCTYPE html>
-<!-- Rest of your HTML stays the same -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Members - Gym Management</title>
+  <title>Member Registration - Gym Management</title>
   
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -92,452 +88,156 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
 
 <div class="main-wrapper">
   <div class="main-content">
-    
-    <!-- Success Message -->
-    <?php if ($success_message): ?>
-      <div class="app-alert app-alert-success">
-        <i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($success_message) ?>
-      </div>
-    <?php endif; ?>
-    
-    <!-- Page Header with Add Button -->
-    <div class="page-header">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h1 class="page-title">Members</h1>
-          <p class="page-subtitle">Manage gym members and their subscriptions</p>
-        </div>
-        <a href="member-entry.php" class="btn app-btn-primary">
-          <i class="fa-solid fa-plus"></i> Add Member
-        </a>
-      </div>
-    </div>
-    
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon total">
-          <i class="fa-solid fa-users"></i>
-        </div>
-        <div class="stat-info">
-          <h3><?= $total_members ?></h3>
-          <p>Total Members</p>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon active">
-          <i class="fa-solid fa-user-check"></i>
-        </div>
-        <div class="stat-info">
-          <h3><?= $active_members ?></h3>
-          <p>Active</p>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon inactive">
-          <i class="fa-solid fa-user-xmark"></i>
-        </div>
-        <div class="stat-info">
-          <h3><?= $inactive_members ?></h3>
-          <p>Inactive</p>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Search and Filter Bar -->
-    <div class="d-flex gap-3 mb-4">
-      <div class="search-box flex-grow-1">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Search members by name, email or phone...">
-      </div>
-      
-      <select class="filter-select" id="statusFilter">
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-        <option value="expired">Expired</option>
-      </select>
-      
-      <select class="filter-select" id="planFilter">
-        <option value="">All Plans</option>
-        <option value="premium">Premium</option>
-        <option value="basic">Basic</option>
-        <option value="standard">Standard</option>
-      </select>
-    </div>
-    
-    <!-- Members Table -->
-    <div class="members-table-container">
-      <div class="table-header">
-        <h3>All Members</h3>
-      </div>
-      
-      <table class="members-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Contact</th>
-            <th>Plan</th>
-            <th>Trainer</th>
-            <th>Status</th>
-            <th>Expiry</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="membersTableBody">
-          <?php if (count($members) > 0): ?>
-            <?php foreach ($members as $member): 
-              $initial = strtoupper(substr($member['full_name'], 0, 1));
-              $plan_type = explode(' - ', $member['membership_type'])[0]; // Extract "Basic", "Premium", etc.
-            ?>
-            <tr data-member-id="<?= $member['id'] ?>" 
-                data-status="<?= strtolower($member['membership_status']) ?>" 
-                data-plan="<?= strtolower($plan_type) ?>">
-              
-              <!-- Member -->
-              <td>
-                <div class="member-cell">
-                  <div class="member-avatar"><?= $initial ?></div>
-                  <div class="member-info">
-                    <span class="name"><?= htmlspecialchars($member['full_name']) ?></span>
-                    <span class="joined">
-                      <i class="fa-regular fa-calendar"></i>
-                      Joined <?= date('Y-m-d', strtotime($member['created_at'])) ?>
-                    </span>
-                  </div>
-                </div>
-              </td>
-              
-              <!-- Contact -->
-              <td>
-                <div class="contact-cell">
-                  <div class="email">
-                    <i class="fa-regular fa-envelope"></i>
-                    <?= htmlspecialchars($member['email']) ?>
-                  </div>
-                  <div class="phone">
-                    <i class="fa-solid fa-phone"></i>
-                    <?= htmlspecialchars($member['phone']) ?>
-                  </div>
-                </div>
-              </td>
-              
-              <!-- Plan -->
-              <td>
-                <span class="plan-badge <?= strtolower($plan_type) ?>">
-                  <?= htmlspecialchars($plan_type) ?>
-                </span>
-              </td>
-              
-              <!-- Trainer -->
-              <td>
-                <?php if ($member['trainer_name']): ?>
-                  <span style="font-size:13px;color:#333;font-weight:500;"><?= htmlspecialchars($member['trainer_name']) ?></span>
-                <?php else: ?>
-                  <span style="font-size:12px;color:#aaa;">Not assigned</span>
-                <?php endif; ?>
-              </td>
-              
-              <!-- Status -->
-              <td>
-                <span class="status-badge <?= strtolower($member['membership_status']) ?>">
-                  <?= htmlspecialchars($member['membership_status']) ?>
-                </span>
-              </td>
-              
-              <!-- Expiry -->
-              <td>
-                <div class="expiry-date">
-                  <?= date('Y-m-d', strtotime($member['end_date'])) ?>
-                </div>
-              </td>
-              
-              <!-- Actions -->
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-action edit" onclick='openEditModal(<?= json_encode($member) ?>)' title="Edit Member">
-                    <i class="fa-regular fa-pen-to-square"></i>
-                  </button>
-                  <?php if (in_array($_SESSION['role'], ['admin','receptionist'])): ?>
-                  <button class="btn-action view" onclick="openAssignTrainer(<?= $member['id'] ?>, '<?= htmlspecialchars($member['full_name'], ENT_QUOTES) ?>', <?= $member['trainer_id'] ?? 'null' ?>)" title="Assign Trainer">
-                    <i class="fas fa-user-tie"></i>
-                  </button>
-                  <?php endif; ?>
-                  <button class="btn-action delete" onclick="deleteMember(<?= $member['id'] ?>, '<?= htmlspecialchars($member['full_name']) ?>')" title="Delete Member">
-                    <i class="fa-regular fa-trash-can"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <tr>
-              <td colspan="6" class="text-center">No members found. <a href="member-entry.php">Add your first member</a></td>
-            </tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-    
-  </div>
-</div>
+    <div class="form-container mx-auto" style="max-width:900px;">
 
-<!-- Edit Member Modal -->
-<div class="modal fade" id="editMemberModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa-solid fa-user-pen"></i> Edit Member Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" action="update-member.php">
-        <div class="modal-body">
-          <input type="hidden" name="member_id" id="edit_member_id">
-          
-          <!-- Personal Information -->
-          <div class="section mb-4">
-            <h6 class="mb-3"><i class="fa-solid fa-user"></i> Personal Information</h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label>Full Name *</label>
-                <input type="text" class="form-control" name="full_name" id="edit_name" required>
-              </div>
-              <div class="col-md-6">
-                <label>Email *</label>
-                <input type="email" class="form-control" name="email" id="edit_email" required>
-              </div>
-              <div class="col-md-6">
-                <label>Phone *</label>
-                <input type="text" class="form-control" name="phone" id="edit_phone" required>
-              </div>
-              <div class="col-md-6">
-                <label>Date of Birth *</label>
-                <input type="date" class="form-control" name="dob" id="edit_dob" required>
-              </div>
-              <div class="col-md-6">
-                <label>Gender *</label>
-                <select class="form-control" name="gender" id="edit_gender" required>
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div class="col-12">
-                <label>Address *</label>
-                <textarea class="form-control" name="address" id="edit_address" rows="2" required></textarea>
-              </div>
+      <h2>Member Registration</h2>
+
+      <!-- Success Message -->
+      <?php if ($success_message): ?>
+        <div class="app-alert app-alert-success">
+          <i class="fa-solid fa-circle-check"></i> <?= $success_message ?>
+        </div>
+      <?php endif; ?>
+
+      <!-- Error Message -->
+      <?php if ($error_message): ?>
+        <div class="app-alert app-alert-error">
+          <i class="fa-solid fa-circle-exclamation"></i> <?= $error_message ?>
+        </div>
+      <?php endif; ?>
+
+      <form method="POST">
+
+        <!-- ========== PERSONAL INFORMATION ========== -->
+        <div class="section">
+          <h3>Personal Information</h3>
+          <p class="section-subtitle">Basic details about the member</p>
+
+          <div class="form-row">
+            <div>
+              <label>Full Name *</label>
+              <input type="text" name="full_name" value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>" required>
+            </div>
+            <div>
+              <label>Email *</label>
+              <input type="email" name="email" value="<?= $error_message && str_contains($error_message,'Email already') ? '' : htmlspecialchars($_POST['email'] ?? '') ?>" required>
             </div>
           </div>
-          
-          <!-- Membership Details -->
-          <div class="section">
-            <h6 class="mb-3"><i class="fa-solid fa-id-card"></i> Membership Details</h6>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label>Membership Type *</label>
-                <select class="form-control" name="membership_type" id="edit_plan" required>
-                  <option value="">Select</option>
-                  <option value="Basic - 799/month">Basic - 799/month</option>
-                  <option value="Standard - 999/month">Standard - 999/month</option>
-                  <option value="Premium - 1299/month">Premium - 1299/month</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label>Status *</label>
-                <select class="form-control" name="membership_status" id="edit_status" required>
-                  <option value="">Select</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Expired">Expired</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label>Duration *</label>
-                <select class="form-control" name="duration" id="edit_duration" required>
-                  <option value="">Select</option>
-                  <option value="1 Month">1 Month</option>
-                  <option value="3 Months">3 Months</option>
-                  <option value="6 Months">6 Months</option>
-                  <option value="12 Months">12 Months</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label>End Date *</label>
-                <input type="date" class="form-control" name="end_date" id="edit_expiry" required>
-              </div>
-              <div class="col-md-12">
-                <label>Fitness Level *</label>
-                <select class="form-control" name="fitness_level" id="edit_fitness" required>
-                  <option value="">Select</option>
-                  <option value="Beginner">Beginner</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
+
+          <div class="form-row">
+            <div>
+              <label>Phone Number *</label>
+              <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" required>
+            </div>
+            <div>
+              <label>Date of Birth *</label>
+              <input type="date" name="dob" value="<?= htmlspecialchars($_POST['dob'] ?? '') ?>" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <label>Gender *</label>
+              <select name="gender" required>
+                <option value="">Select</option>
+                <option <?= ($_POST['gender'] ?? '')==='Male'?'selected':'' ?>>Male</option>
+                <option <?= ($_POST['gender'] ?? '')==='Female'?'selected':'' ?>>Female</option>
+                <option <?= ($_POST['gender'] ?? '')==='Other'?'selected':'' ?>>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <label>Address *</label>
+          <textarea name="address" required><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+        </div>
+
+        <!-- ========== MEMBERSHIP DETAILS ========== -->
+        <div class="section">
+          <h3>Membership Details</h3>
+          <p class="section-subtitle">Select membership type and duration</p>
+
+          <div class="form-row">
+            <div>
+              <label>Membership Type *</label>
+              <select name="membership_type" required>
+                <option <?= ($_POST['membership_type'] ?? '')==='Basic - 799/month'?'selected':'' ?>>Basic - 799/month</option>
+                <option <?= ($_POST['membership_type'] ?? '')==='Standard - 999/month'?'selected':'' ?>>Standard - 999/month</option>
+                <option <?= ($_POST['membership_type'] ?? '')==='Premium - 1299/month'?'selected':'' ?>>Premium - 1299/month</option>
+              </select>
+            </div>
+            <div>
+              <label>Start Date *</label>
+              <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($_POST['start_date'] ?? '') ?>" required>
+            </div>
+            <div>
+              <label>Duration *</label>
+              <select name="duration" id="duration" required>
+                <option <?= ($_POST['duration'] ?? '')==='1 Month'?'selected':'' ?>>1 Month</option>
+                <option <?= ($_POST['duration'] ?? '')==='3 Months'?'selected':'' ?>>3 Months</option>
+                <option <?= ($_POST['duration'] ?? '')==='6 Months'?'selected':'' ?>>6 Months</option>
+                <option <?= ($_POST['duration'] ?? '')==='12 Months'?'selected':'' ?>>12 Months</option>
+              </select>
+            </div>
+          </div>
+
+          <label>End Date * <span style="font-size:12px;color:#2e7d32;">(auto-calculated from start date + duration)</span></label>
+          <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($_POST['end_date'] ?? '') ?>" required>
+        </div>
+
+        <!-- ========== FITNESS INFO ========== -->
+        <div class="section">
+          <h3>Fitness Information</h3>
+          <p class="section-subtitle">Help us understand your health and fitness goals</p>
+
+          <div class="form-row">
+            <div>
+              <label>Current Fitness Level *</label>
+              <select name="fitness_level" required>
+                <option <?= ($_POST['fitness_level'] ?? '')==='Beginner'?'selected':'' ?>>Beginner</option>
+                <option <?= ($_POST['fitness_level'] ?? '')==='Medium'?'selected':'' ?>>Medium</option>
+                <option <?= ($_POST['fitness_level'] ?? '')==='Advanced'?'selected':'' ?>>Advanced</option>
+              </select>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn app-btn-secondary" data-bs-dismiss="modal">
-            <i class="fa-solid fa-xmark"></i> Cancel
-          </button>
-          <button type="submit" class="btn app-btn-primary">
-            <i class="fa-solid fa-floppy-disk"></i> Save Changes
-          </button>
+
+        <!-- ========== BUTTONS ========== -->
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn app-btn-primary w-100">Register Member</button>
+          <button type="reset" class="btn app-btn-secondary w-100">Reset Form</button>
         </div>
+
       </form>
     </div>
   </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header border-0">
-        <h5 class="modal-title text-danger">
-          <i class="fa-solid fa-triangle-exclamation"></i> Confirm Delete
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" action="delete-member.php">
-        <div class="modal-body">
-          <input type="hidden" name="member_id" id="delete_member_id">
-          <p class="mb-0">Are you sure you want to delete <strong id="deleteMemberName"></strong>?</p>
-          <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
-        </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn app-btn-secondary" data-bs-dismiss="modal">
-            <i class="fa-solid fa-xmark"></i> Cancel
-          </button>
-          <button type="submit" class="btn btn-danger">
-            <i class="fa-solid fa-trash-can"></i> Delete
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Assign Trainer Modal -->
-<div id="assignTrainerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;padding:30px;width:100%;max-width:420px;margin:20px;">
-    <h3 style="margin:0 0 5px;font-size:18px;font-weight:700;"><i class="fas fa-user-tie" style="color:var(--active-color);"></i> Assign Trainer</h3>
-    <p id="assignMemberName" style="color:#666;font-size:14px;margin:0 0 20px;"></p>
-    <form method="POST">
-      <input type="hidden" name="assign_trainer" value="1">
-      <input type="hidden" name="assign_member_id" id="assignMemberId">
-      <label>Select Trainer</label>
-      <select name="assign_trainer_id" id="assignTrainerId" style="margin-bottom:20px;">
-        <option value="0">-- Remove Assignment --</option>
-        <?php foreach($trainers as $t): ?>
-        <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['full_name']) ?></option>
-        <?php endforeach; ?>
-      </select>
-      <div style="display:flex;gap:10px;">
-        <button type="button" onclick="document.getElementById('assignTrainerModal').style.display='none'" class="btn app-btn-secondary" style="flex:1;">Cancel</button>
-        <button type="submit" class="btn app-btn-primary" style="flex:1;">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-function openAssignTrainer(memberId, memberName, currentTrainerId) {
-  document.getElementById('assignMemberId').value = memberId;
-  document.getElementById('assignMemberName').textContent = 'Member: ' + memberName;
-  if (currentTrainerId) {
-    document.getElementById('assignTrainerId').value = currentTrainerId;
-  }
-  document.getElementById('assignTrainerModal').style.display = 'flex';
-}
-document.getElementById('assignTrainerModal').addEventListener('click', function(e) {
-  if (e.target === this) this.style.display = 'none';
-});
+// Auto calculate end date from start date + duration
+function calcEndDate() {
+    const start = document.getElementById('start_date').value;
+    const duration = document.getElementById('duration').value;
+    if (!start || !duration) return;
 
-// Open Edit Modal with prefilled data
-function openEditModal(member) {
-  document.getElementById('edit_member_id').value = member.id;
-  document.getElementById('edit_name').value = member.full_name;
-  document.getElementById('edit_email').value = member.email;
-  document.getElementById('edit_phone').value = member.phone;
-  document.getElementById('edit_dob').value = member.dob;
-  document.getElementById('edit_gender').value = member.gender;
-  document.getElementById('edit_address').value = member.address;
-  document.getElementById('edit_plan').value = member.membership_type;
-  document.getElementById('edit_status').value = member.membership_status;
-  document.getElementById('edit_duration').value = member.duration;
-  document.getElementById('edit_expiry').value = member.end_date;
-  document.getElementById('edit_fitness').value = member.fitness_level;
-  
-  // Show modal
-  const modal = new bootstrap.Modal(document.getElementById('editMemberModal'));
-  modal.show();
+    const months = {
+        '1 Month': 1, '3 Months': 3,
+        '6 Months': 6, '12 Months': 12
+    };
+    const m = months[duration] || 0;
+    if (!m) return;
+
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + m);
+    // Format as YYYY-MM-DD
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getDate()).padStart(2, '0');
+    document.getElementById('end_date').value = `${yyyy}-${mm}-${dd}`;
 }
 
-// Delete Member - Show confirmation modal
-function deleteMember(id, name) {
-  document.getElementById('delete_member_id').value = id;
-  document.getElementById('deleteMemberName').textContent = name;
-  
-  const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-  modal.show();
-}
-
-// Search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-  const searchTerm = this.value.toLowerCase();
-  const rows = document.querySelectorAll('#membersTableBody tr');
-  
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(searchTerm) ? '' : 'none';
-  });
-});
-
-// Status filter
-document.getElementById('statusFilter').addEventListener('change', function() {
-  filterTable();
-});
-
-// Plan filter
-document.getElementById('planFilter').addEventListener('change', function() {
-  filterTable();
-});
-
-// Combined filter function
-function filterTable() {
-  const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-  const planFilter = document.getElementById('planFilter').value.toLowerCase();
-  const rows = document.querySelectorAll('#membersTableBody tr');
-  
-  rows.forEach(row => {
-    const status = row.getAttribute('data-status');
-    const plan = row.getAttribute('data-plan');
-    
-    const statusMatch = !statusFilter || status === statusFilter;
-    const planMatch = !planFilter || plan === planFilter;
-    
-    row.style.display = (statusMatch && planMatch) ? '' : 'none';
-  });
-}
-
-// Auto-hide success message after 5 seconds
-setTimeout(function() {
-  const alert = document.querySelector('.app-alert');
-  if (alert) {
-    alert.style.transition = 'opacity 0.5s';
-    alert.style.opacity = '0';
-    setTimeout(() => alert.remove(), 500);
-  }
-}, 5000);
+document.getElementById('start_date').addEventListener('change', calcEndDate);
+document.getElementById('duration').addEventListener('change', calcEndDate);
 </script>
-
 </body>
 </html>
