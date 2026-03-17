@@ -111,8 +111,7 @@ $user_menu = $menus[$user_role] ?? [];
               <i class="fas fa-arrow-right"></i> Member Entry Form
             </a>
           </li>
-          
-          </li>
+         
           
           <?php endif; ?>
         </ul>
