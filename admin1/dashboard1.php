@@ -9,6 +9,7 @@ $page = 'dashboard';
 $today = date('Y-m-d');
 $current_month = date('Y-m');
 
+// ── CORE STAT CARDS ──────────────────────────────────────────────────────────
 $total_members   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members"))['t'];
 $active_staff    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM staff WHERE status='Active'"))['t'];
 $today_checkins  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE attendance_date='$today' AND status='Present'"))['t'];
@@ -17,17 +18,20 @@ $total_active    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t 
 $monthly_revenue = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) as t FROM payments WHERE DATE_FORMAT(payment_date,'%Y-%m')='$current_month' AND status='Paid'"))['t'];
 $pending_dues    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(amount),0) as t FROM payments WHERE status IN ('Due','Overdue')"))['t'];
 
+// ── MEMBERSHIP PLAN BREAKDOWN ────────────────────────────────────────────────
 $premium_count  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_type LIKE '%Premium%'"))['t'];
 $basic_count    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_type LIKE '%Basic%'"))['t'];
 $standard_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_type LIKE '%Standard%'"))['t'];
 
+// ── WEEKLY ATTENDANCE ────────────────────────────────────────────────────────
 $weekly_attendance = [];
 for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
+    $date  = date('Y-m-d', strtotime("-$i days"));
     $count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance WHERE attendance_date='$date' AND status='Present'"))['t'];
     $weekly_attendance[] = ['day' => date('D', strtotime($date)), 'count' => $count];
 }
 
+// ── MEMBER GROWTH ────────────────────────────────────────────────────────────
 $member_growth = [];
 for ($i = 5; $i >= 0; $i--) {
     $month_date = date('Y-m', strtotime("-$i months"));
@@ -35,19 +39,45 @@ for ($i = 5; $i >= 0; $i--) {
     $member_growth[] = ['month' => date('M', strtotime("-$i months")), 'count' => $count];
 }
 
-$capacity = 150;
-$occupancy_percent = $capacity > 0 ? ($today_checkins / $capacity) * 100 : 0;
-$retention_rate = $total_members > 0 ? ($total_active / $total_members) * 100 : 0;
+// ── 6-MONTH REVENUE from payments table ──────────────────────────────────────
+$revenue_labels = [];
+$revenue_data   = [];
+for ($i = 5; $i >= 0; $i--) {
+    $month_label = date('M', strtotime("-$i months"));
+    $row = mysqli_fetch_assoc(mysqli_query($conn,
+        "SELECT COALESCE(SUM(amount),0) as t FROM payments
+         WHERE DATE_FORMAT(payment_date,'%Y-%m') = '" . date('Y-m', strtotime("-$i months")) . "'
+         AND status = 'Paid'"
+    ));
+    $revenue_labels[] = $month_label;
+    $revenue_data[]   = (int) $row['t'];
+}
 
+$capacity          = 150; // change this number to your gym's actual max capacity
+$occupancy_percent = $capacity > 0 ? ($today_checkins / $capacity) * 100 : 0;
+$retention_rate    = $total_members > 0 ? ($total_active / $total_members) * 100 : 0;
+
+// ── UPCOMING RENEWALS with real last-paid amount ─────────────────────────────
 $upcoming_renewals = [];
 $renewal_date = date('Y-m-d', strtotime('+30 days'));
-$res = mysqli_query($conn, "SELECT id, full_name, membership_type, end_date FROM members WHERE end_date BETWEEN '$today' AND '$renewal_date' ORDER BY end_date ASC LIMIT 4");
+$res = mysqli_query($conn,
+    "SELECT m.id, m.full_name, m.membership_type, m.end_date,
+            (SELECT p.amount FROM payments p
+             WHERE p.member_id = m.id AND p.status = 'Paid'
+             ORDER BY p.payment_date DESC LIMIT 1) AS last_amount
+     FROM members m
+     WHERE m.end_date BETWEEN '$today' AND '$renewal_date'
+     ORDER BY m.end_date ASC
+     LIMIT 4"
+);
 while ($row = mysqli_fetch_assoc($res)) $upcoming_renewals[] = $row;
 
+// ── EQUIPMENT ALERTS ─────────────────────────────────────────────────────────
 $equipment_alerts = [];
 $res2 = mysqli_query($conn, "SELECT * FROM equipment WHERE status IN ('Maintenance','Out of Order') LIMIT 3");
 while ($row = mysqli_fetch_assoc($res2)) $equipment_alerts[] = $row;
 
+// ── ANNOUNCEMENTS ────────────────────────────────────────────────────────────
 $announcements = [];
 $res3 = mysqli_query($conn, "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 3");
 while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
@@ -133,7 +163,10 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
     <div class="row g-4 mt-1">
       <div class="col-md-8">
         <div class="chart-container">
-          <div class="chart-title"><i class="fas fa-chart-line"></i> Monthly Revenue (₹)</div>
+          <div class="chart-title">
+            <i class="fas fa-chart-line"></i>
+            Monthly Revenue (₹) — <?= $revenue_labels[0] ?> to <?= $revenue_labels[5] ?>
+          </div>
           <canvas id="revenueChart"></canvas>
         </div>
       </div>
@@ -173,7 +206,7 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
           <div class="progress-bar-custom">
             <div class="progress-fill" style="width:<?= min($occupancy_percent,100) ?>%;background:#dc3545;"></div>
           </div>
-          <div class="metric-label"><?= round($occupancy_percent) ?>% capacity</div>
+          <div class="metric-label"><?= round($occupancy_percent) ?>% of max capacity (<?= $capacity ?>)</div>
         </div>
       </div>
       <div class="col-md-4">
@@ -215,7 +248,7 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
               <div style="font-weight:600;font-size:14px;"><?= htmlspecialchars($a['title']) ?></div>
               <div style="font-size:12px;color:#666;"><?= substr(htmlspecialchars($a['message']),0,50) ?>...</div>
             </div>
-            <span class="status-badge <?= strtolower($a['category'])==='urgent'?'expired':'active' ?>" style="font-size:11px;"><?= $a['category'] ?></span>
+            <span class="status-badge <?= strtolower($a['category'])==='urgent'?'expired':'active' ?>" style="font-size:11px;"><?= htmlspecialchars($a['category']) ?></span>
           </div>
           <?php endforeach; else: ?>
           <div style="text-align:center;padding:30px;color:#aaa;">No announcements</div>
@@ -223,18 +256,19 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
           <a href="../modules/announcements.php" style="display:block;text-align:center;margin-top:15px;color:#dc3545;font-size:13px;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
+
       <div class="col-md-4">
         <div class="chart-container">
           <div class="chart-title"><i class="fas fa-clock-rotate-left"></i> Upcoming Renewals</div>
-          <?php if(!empty($upcoming_renewals)): foreach($upcoming_renewals as $r):
-            $price = strpos($r['membership_type'],'Premium')!==false ? '₹1,299' : '₹799';
-          ?>
+          <?php if(!empty($upcoming_renewals)): foreach($upcoming_renewals as $r): ?>
           <div class="renewal-item">
             <div>
               <div style="font-weight:600;font-size:14px;"><?= htmlspecialchars($r['full_name']) ?></div>
               <div style="font-size:12px;color:#666;">Expires <?= date('d M Y', strtotime($r['end_date'])) ?></div>
             </div>
-            <span class="renewal-amount"><?= $price ?></span>
+            <span class="renewal-amount">
+              <?= $r['last_amount'] ? '₹' . number_format($r['last_amount']) : 'N/A' ?>
+            </span>
           </div>
           <?php endforeach; else: ?>
           <div style="text-align:center;padding:30px;color:#aaa;">No renewals in next 30 days</div>
@@ -242,16 +276,19 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
           <a href="../modules/members.php" style="display:block;text-align:center;margin-top:15px;color:#dc3545;font-size:13px;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
+
       <div class="col-md-4">
         <div class="chart-container">
           <div class="chart-title"><i class="fas fa-dumbbell"></i> Equipment Alerts</div>
           <?php if(!empty($equipment_alerts)): foreach($equipment_alerts as $e): ?>
           <div class="renewal-item">
             <div>
-              <div style="font-weight:600;font-size:14px;"><?= htmlspecialchars($e['equipment_name'] ?? $e['name'] ?? '—') ?></div>
-              <div style="font-size:12px;color:#666;"><?= $e['status'] ?></div>
+              <div style="font-weight:600;font-size:14px;"><?= htmlspecialchars($e['name'] ?? '—') ?></div>
+              <div style="font-size:12px;color:#666;"><?= htmlspecialchars($e['status']) ?></div>
             </div>
-            <span class="status-badge <?= $e['status']==='Out of Order'?'expired':'inactive' ?>" style="font-size:11px;"><?= $e['status']==='Out of Order'?'Urgent':'Maintenance' ?></span>
+            <span class="status-badge <?= $e['status']==='Out of Order'?'expired':'inactive' ?>" style="font-size:11px;">
+              <?= $e['status']==='Out of Order' ? 'Urgent' : 'Maintenance' ?>
+            </span>
           </div>
           <?php endforeach; else: ?>
           <div style="text-align:center;padding:30px;color:#22c55e;">
@@ -272,17 +309,38 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
 new Chart(document.getElementById('revenueChart'), {
   type: 'line',
   data: {
-    labels: ['Aug','Sep','Oct','Nov','Dec','Jan'],
-    datasets: [{ label: 'Revenue', data: [35000,42000,45000,48000,50000,55000], borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', fill: true, tension: 0.4, borderWidth: 2 }]
+    labels: <?= json_encode($revenue_labels) ?>,
+    datasets: [{
+      label: 'Revenue',
+      data: <?= json_encode($revenue_data) ?>,
+      borderColor: '#dc3545',
+      backgroundColor: 'rgba(220,53,69,0.1)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2
+    }]
   },
-  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '₹'+(v/1000)+'k' } } } }
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+      }
+    }
+  }
 });
 
 new Chart(document.getElementById('membershipChart'), {
   type: 'doughnut',
   data: {
     labels: ['Premium','Basic','Standard'],
-    datasets: [{ data: [<?= $premium_count ?>,<?= $basic_count ?>,<?= $standard_count ?>], backgroundColor: ['#dc3545','#6c757d','#22c55e'], borderWidth: 0 }]
+    datasets: [{
+      data: [<?= $premium_count ?>, <?= $basic_count ?>, <?= $standard_count ?>],
+      backgroundColor: ['#dc3545','#6c757d','#22c55e'],
+      borderWidth: 0
+    }]
   },
   options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
 });
@@ -291,18 +349,39 @@ new Chart(document.getElementById('attendanceChart'), {
   type: 'bar',
   data: {
     labels: [<?php foreach($weekly_attendance as $w) echo "'".$w['day']."',"; ?>],
-    datasets: [{ label: 'Attendance', data: [<?php foreach($weekly_attendance as $w) echo $w['count'].","; ?>], backgroundColor: '#dc3545', borderRadius: 6 }]
+    datasets: [{
+      label: 'Attendance',
+      data: [<?php foreach($weekly_attendance as $w) echo $w['count'].","; ?>],
+      backgroundColor: '#dc3545',
+      borderRadius: 6
+    }]
   },
-  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } }
+  }
 });
 
 new Chart(document.getElementById('growthChart'), {
   type: 'line',
   data: {
     labels: [<?php foreach($member_growth as $m) echo "'".$m['month']."',"; ?>],
-    datasets: [{ label: 'Members', data: [<?php foreach($member_growth as $m) echo $m['count'].","; ?>], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4, borderWidth: 2 }]
+    datasets: [{
+      label: 'Members',
+      data: [<?php foreach($member_growth as $m) echo $m['count'].","; ?>],
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34,197,94,0.1)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2
+    }]
   },
-  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } }
+  }
 });
 </script>
 </body>
