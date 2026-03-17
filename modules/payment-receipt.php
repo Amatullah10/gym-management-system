@@ -22,6 +22,11 @@ $p = mysqli_fetch_assoc($res);
 // Invoice number: GMS_ + random 7 digits based on id
 $invoice = 'GMS_' . str_pad($payment_id * 9 + 1000000, 7, '0', STR_PAD_LEFT);
 
+// Calculate valid until date from payment_date + plan duration
+$plan_months  = ['Monthly' => 1, 'Quarterly' => 3, 'Yearly' => 12];
+$months_to_add = $plan_months[$p['plan']] ?? 1;
+$valid_until  = date('d F Y', strtotime($p['payment_date'] . " +{$months_to_add} months"));
+
 $role = $_SESSION['role'];
 include '../layout/header.php';
 include '../layout/sidebar.php';
@@ -93,7 +98,7 @@ include '../layout/sidebar.php';
         <tbody>
           <tr>
             <td style="padding:10px 0;border-top:1px solid #f0f0f0;"><?= htmlspecialchars($p['service']) ?></td>
-            <td style="padding:10px 0;border-top:1px solid #f0f0f0;text-align:right;"><?= htmlspecialchars($p['plan']) ?></td>
+            <td style="padding:10px 0;border-top:1px solid #f0f0f0;text-align:right;"><?= htmlspecialchars($p['plan']) ?> &nbsp;<strong>(<?= $valid_until ?>)</strong></td>
           </tr>
           <tr>
             <td style="padding:10px 0;border-top:1px solid #f0f0f0;">Charge Per Month</td>

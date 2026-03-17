@@ -18,33 +18,21 @@ $page = 'payments'; // For active sidebar highlighting
 
 // Calculate statistics
 // This Month
-$this_month_query = "SELECT COALESCE(SUM(amount_paid), 0) as total 
+$this_month_query = "SELECT COALESCE(SUM(amount), 0) as total 
                      FROM payments 
                      WHERE MONTH(payment_date) = MONTH(CURDATE()) 
-                     AND YEAR(payment_date) = YEAR(CURDATE())";
+                     AND YEAR(payment_date) = YEAR(CURDATE())
+                     AND status = 'Paid'";
 $this_month_result = mysqli_query($conn, $this_month_query);
 $this_month = mysqli_fetch_assoc($this_month_result)['total'];
 
 // Total Collected
-$collected_query = "SELECT COALESCE(SUM(amount_paid), 0) as total FROM payments";
+$collected_query = "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'Paid'";
 $collected_result = mysqli_query($conn, $collected_query);
 $collected = mysqli_fetch_assoc($collected_result)['total'];
 
-// Calculate pending (will be updated based on your logic)
-// For now: Calculate based on active members' membership fees - payments
-$pending_query = "SELECT 
-    COALESCE(SUM(
-        CASE 
-            WHEN m.membership_type LIKE '%Basic%' THEN 799
-            WHEN m.membership_type LIKE '%Standard%' THEN 999
-            WHEN m.membership_type LIKE '%Premium%' THEN 1299
-            ELSE 0
-        END - COALESCE(
-            (SELECT SUM(amount_paid) FROM payments WHERE member_id = m.id), 0
-        )
-    ), 0) as pending
-    FROM members m
-    WHERE m.membership_status = 'Active'";
+// Pending = Due + Overdue payments
+$pending_query = "SELECT COALESCE(SUM(amount), 0) as pending FROM payments WHERE status IN ('Due', 'Overdue')";
 $pending_result = mysqli_query($conn, $pending_query);
 $pending = mysqli_fetch_assoc($pending_result)['pending'];
 
@@ -61,7 +49,7 @@ $sql = "SELECT
         'Never'
     ) as last_payment_date,
     COALESCE(
-        (SELECT SUM(amount_paid) FROM payments WHERE member_id = m.id),
+        (SELECT SUM(amount) FROM payments WHERE member_id = m.id AND status = 'Paid'),
         0
     ) as total_paid,
     CASE 
@@ -71,11 +59,11 @@ $sql = "SELECT
         ELSE 0
     END as membership_fee,
     COALESCE(
-        (SELECT service_type FROM payments WHERE member_id = m.id ORDER BY payment_date DESC LIMIT 1),
+        (SELECT service FROM payments WHERE member_id = m.id ORDER BY payment_date DESC LIMIT 1),
         'Fitness'
     ) as service_type,
     COALESCE(
-        (SELECT plan_type FROM payments WHERE member_id = m.id ORDER BY payment_date DESC LIMIT 1),
+        (SELECT plan FROM payments WHERE member_id = m.id ORDER BY payment_date DESC LIMIT 1),
         'Monthly'
     ) as plan_type
 FROM members m
@@ -350,7 +338,7 @@ function makePayment(memberId) {
             <div class="form-row">
               <div>
                 <label>Amount *</label>
-                <input type="number" name="amount_paid" step="0.01" required>
+                <input type="number" name="amount" step="0.01" required>
               </div>
               <div>
                 <label>Payment Date *</label>

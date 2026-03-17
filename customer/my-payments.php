@@ -177,7 +177,7 @@ include '../layout/sidebar.php';
   <div class="table-container">
     <div class="table-header"><h3>Payment History</h3></div>
     <table class="modern-table">
-      <thead><tr><th>#</th><th>Service</th><th>Amount</th><th>Plan</th><th>Method</th><th>Date</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>Service</th><th>Amount</th><th>Plan</th><th>Method</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
       <tbody>
         <?php if(empty($history)): ?>
         <tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa;">No payment history.</td></tr>
@@ -192,6 +192,16 @@ include '../layout/sidebar.php';
           <td><?= $p['payment_method'] ?></td>
           <td><?= date('d M Y', strtotime($p['payment_date'])) ?></td>
           <td><span class="status-badge <?= $badge ?>"><?= $p['status'] ?></span></td>
+          <td>
+            <?php if($p['status'] === 'Paid'): ?>
+            <button onclick="printReceipt(<?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($member), ENT_QUOTES) ?>)"
+              style="background:var(--active-color);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+              <i class="fas fa-print"></i> Print
+            </button>
+            <?php else: ?>
+            <span style="color:#ccc;font-size:12px;">—</span>
+            <?php endif; ?>
+          </td>
         </tr>
         <?php endforeach; endif; ?>
       </tbody>
@@ -200,5 +210,109 @@ include '../layout/sidebar.php';
   <?php endif; ?>
 
 </div></div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div id="receiptContent" style="background:#fff;border-radius:16px;padding:40px;width:100%;max-width:520px;margin:20px;max-height:90vh;overflow-y:auto;">
+    <!-- Filled by JS -->
+  </div>
+</div>
+
+<style>
+@media print {
+  body > * { display: none !important; }
+  #printArea { display: block !important; }
+}
+#printArea { display: none; }
+</style>
+<div id="printArea"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function printReceipt(p, member) {
+  const planMonths = { 'Monthly': 1, 'Quarterly': 3, 'Yearly': 12 };
+  const months = planMonths[p.plan] || 1;
+  const payDate = new Date(p.payment_date);
+  const validDate = new Date(payDate);
+  validDate.setMonth(validDate.getMonth() + months);
+  const validStr = validDate.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  const payStr   = payDate.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  const invoice  = 'GMS_' + String(parseInt(p.id) * 9 + 1000000).padStart(7,'0');
+
+  const html = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:60px;height:60px;border-radius:50%;border:2px solid #941614;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+        <i class="fas fa-dumbbell" style="font-size:24px;color:#941614;"></i>
+      </div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;">Payment Receipt</h2>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:16px;">
+      <div>
+        <div>Invoice #${invoice}</div>
+        <div>NextGen Fitness GYM</div>
+        <div>123 Main Street, Mumbai</div>
+      </div>
+      <div style="text-align:right;">Date: ${payStr}</div>
+    </div>
+    <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;">Member: ${member.full_name}</div>
+      <div style="color:#941614;font-size:13px;margin-top:3px;">Paid On: ${payStr}</div>
+    </div>
+    <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+      <thead>
+        <tr style="color:#999;">
+          <th style="text-align:left;padding:6px 0;">Service Taken</th>
+          <th style="text-align:right;padding:6px 0;">Valid Upto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:8px 0;border-top:1px solid #f0f0f0;">${p.service || 'Fitness'}</td>
+          <td style="padding:8px 0;border-top:1px solid #f0f0f0;text-align:right;">${p.plan} <strong>(${validStr})</strong></td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-top:1px solid #f0f0f0;">Charge Per Month</td>
+          <td style="padding:8px 0;border-top:1px solid #f0f0f0;text-align:right;">₹${parseInt(p.amount).toLocaleString('en-IN')}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td style="padding:12px 0;border-top:2px solid #222;font-weight:700;">Total Amount</td>
+          <td style="padding:12px 0;border-top:2px solid #222;text-align:right;font-weight:700;">₹${parseInt(p.amount).toLocaleString('en-IN')}</td>
+        </tr>
+      </tfoot>
+    </table>
+    <p style="text-align:center;color:#aaa;font-size:12px;font-style:italic;margin-top:16px;">
+      Thank you for your payment. We appreciate your promptness!
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+      <button onclick="doPrint()" style="background:#941614;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+        <i class="fas fa-print"></i> Print
+      </button>
+      <button onclick="closeReceipt()" style="background:#f0f0f0;color:#555;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+        Close
+      </button>
+    </div>`;
+
+  document.getElementById('receiptContent').innerHTML = html;
+  document.getElementById('receiptModal').style.display = 'flex';
+  // Store for print
+  document.getElementById('printArea').innerHTML = '<div style="padding:30px;max-width:500px;margin:0 auto;">' + html + '</div>';
+}
+
+function doPrint() {
+  window.print();
+}
+
+function closeReceipt() {
+  document.getElementById('receiptModal').style.display = 'none';
+}
+
+// Close on backdrop click
+document.getElementById('receiptModal').addEventListener('click', function(e) {
+  if (e.target === this) closeReceipt();
+});
+</script>
 </body></html>

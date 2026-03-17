@@ -170,12 +170,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div>
               <label>Start Date *</label>
-              <input type="date" name="start_date" required>
+              <input type="date" name="start_date" id="start_date" required>
             </div>
 
             <div>
               <label>Duration *</label>
-              <select name="duration" required>
+              <select name="duration" id="duration" required>
                 <option>1 Month</option>
                 <option>3 Months</option>
                 <option>6 Months</option>
@@ -184,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
 
-          <label>End Date *</label>
-          <input type="date" name="end_date" required>
+          <label>End Date * <span style="font-size:12px;color:#2e7d32;">(auto-calculated from start date + duration)</span></label>
+          <input type="date" name="end_date" id="end_date" required>
         </div>
 
         <!-- ========== FITNESS INFO ========== -->
@@ -218,5 +218,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function calcEndDate() {
+    const start    = document.getElementById('start_date').value;
+    const duration = document.getElementById('duration').value;
+    if (!start || !duration) return;
+
+    const months = { '1 Month': 1, '3 Months': 3, '6 Months': 6, '12 Months': 12 };
+    const m = months[duration];
+    if (!m) return;
+
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + m);
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getDate()).padStart(2, '0');
+    document.getElementById('end_date').value = `${yyyy}-${mm}-${dd}`;
+}
+
+document.getElementById('start_date').addEventListener('change', calcEndDate);
+document.getElementById('duration').addEventListener('change', calcEndDate);
+</script>
 </body>
 </html>

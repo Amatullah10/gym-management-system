@@ -37,12 +37,38 @@ while ($row = mysqli_fetch_assoc($result)) $members[] = $row;
 
 // --- Alert / Reminder POST ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remind_member_id'])) {
-    $mid = (int)$_POST['remind_member_id'];
-    $msg = "Payment reminder sent for member ID $mid.";
+    $mid   = (int)$_POST['remind_member_id'];
     $mname = mysqli_real_escape_string($conn, $_POST['remind_member_name']);
     $note  = "Payment reminder sent to $mname by " . $_SESSION['email'];
+
+    // Log reminder to DB
     mysqli_query($conn, "INSERT INTO payment_reminders (member_id, type, message, sent_by) VALUES ($mid, 'General', '$note', '{$_SESSION['email']}')");
-    $alert_msg = "Reminder sent for <strong>$mname</strong>!";
+
+    // Fetch member email to send actual email
+    $mem_res   = mysqli_query($conn, "SELECT email FROM members WHERE id = $mid");
+    $mem_row   = mysqli_fetch_assoc($mem_res);
+    $mem_email = $mem_row['email'] ?? '';
+
+    $email_sent = false;
+    if ($mem_email) {
+        require_once '../auth/mailer.php';
+        $subject = 'Payment Reminder — NextGen Fitness Gym';
+        $body    = "
+        <div style='font-family:Inter,sans-serif;max-width:500px;margin:0 auto;padding:30px;'>
+            <h2 style='color:#941614;'>NextGen Fitness Gym</h2>
+            <p style='color:#333;font-size:15px;'>Dear <strong>" . htmlspecialchars($mname) . "</strong>,</p>
+            <p style='color:#555;'>This is a friendly reminder that you have a pending payment due for your gym membership.</p>
+            <p style='color:#555;'>Please visit the gym or contact us to clear your dues at the earliest.</p>
+            <p style='color:#555;'>Thank you for being a valued member!</p>
+            <hr style='border:none;border-top:1px solid #eee;margin:20px 0;'>
+            <p style='color:#bbb;font-size:12px;'>NextGen Fitness Gym | 123 Main Street, Mumbai | Tel: 022-1234-5678</p>
+        </div>";
+        $email_sent = sendMail($mem_email, $mname, $subject, $body);
+    }
+
+    $alert_msg = $email_sent
+        ? "Reminder email sent to <strong>$mname</strong> successfully!"
+        : "Reminder logged for <strong>$mname</strong>. (Email could not be sent — check mail config.)";
 }
 
 $role = $_SESSION['role'];

@@ -26,17 +26,45 @@ $trainer = mysqli_fetch_assoc(mysqli_query($conn, "SELECT s.full_name FROM train
 $edit_mode = isset($_GET['edit']);
 $success = $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $phone     = mysqli_real_escape_string($conn, $_POST['phone']);
-    $dob       = mysqli_real_escape_string($conn, $_POST['dob']);
-    $address   = mysqli_real_escape_string($conn, $_POST['address']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
-    mysqli_query($conn, "UPDATE members SET full_name='$full_name', phone='$phone', dob='$dob', address='$address' WHERE id=$member_id");
-    // Refresh member data
-    $member = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM members WHERE id=$member_id"));
-    $success = "Profile updated successfully!";
-    $edit_mode = false;
+    // ── Update profile info ──
+    if ($_POST['action'] === 'update_profile') {
+        $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+        $phone     = mysqli_real_escape_string($conn, $_POST['phone']);
+        $dob       = mysqli_real_escape_string($conn, $_POST['dob']);
+        $address   = mysqli_real_escape_string($conn, $_POST['address']);
+
+        mysqli_query($conn, "UPDATE members SET full_name='$full_name', phone='$phone', dob='$dob', address='$address' WHERE id=$member_id");
+        $member    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM members WHERE id=$member_id"));
+        $success   = "Profile updated successfully!";
+        $edit_mode = false;
+    }
+
+    // ── Change password ──
+    if ($_POST['action'] === 'change_password') {
+        $current  = $_POST['current_password'];
+        $new_pass = $_POST['new_password'];
+        $confirm  = $_POST['confirm_password'];
+
+        // Fetch current hash from users table
+        $u = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE email='$email'"));
+
+        if (!$u) {
+            $error = "User account not found.";
+        } elseif (!password_verify($current, $u['password']) && $u['password'] !== $current) {
+            $error = "Current password is incorrect.";
+        } elseif (strlen($new_pass) < 6) {
+            $error = "New password must be at least 6 characters.";
+        } elseif ($new_pass !== $confirm) {
+            $error = "New passwords do not match.";
+        } else {
+            $hashed = password_hash($new_pass, PASSWORD_DEFAULT);
+            $hashed_esc = mysqli_real_escape_string($conn, $hashed);
+            mysqli_query($conn, "UPDATE users SET password='$hashed_esc' WHERE email='$email'");
+            $success = "Password changed successfully!";
+        }
+    }
 }
 
 $initials = strtoupper(substr($member['full_name'] ?? 'U', 0, 2));
@@ -94,6 +122,7 @@ include '../layout/sidebar.php';
   <?php if($edit_mode): ?>
   <!-- Edit Form -->
   <form method="POST">
+    <input type="hidden" name="action" value="update_profile">
     <div class="table-container" style="padding:25px;margin-bottom:15px;">
       <h3 style="margin:0 0 20px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;">
         <i class="fas fa-user" style="color:var(--active-color);"></i> Personal Information
@@ -159,6 +188,32 @@ include '../layout/sidebar.php';
         <div style="font-weight:600;font-size:15px;"><?= htmlspecialchars($member['address'] ?? '—') ?></div>
       </div>
     </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="table-container" style="padding:25px;margin-bottom:15px;">
+    <h3 style="margin:0 0 20px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--active-color);">
+      <i class="fas fa-lock"></i> Change Password
+    </h3>
+    <?php if($error): ?><div class="app-alert app-alert-error"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div><?php endif; ?>
+    <form method="POST" style="max-width:480px;">
+      <input type="hidden" name="action" value="change_password">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;display:block;margin-bottom:5px;">Current Password</label>
+        <input type="password" name="current_password" required placeholder="Enter current password">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;display:block;margin-bottom:5px;">New Password</label>
+        <input type="password" name="new_password" required placeholder="At least 6 characters">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;display:block;margin-bottom:5px;">Confirm New Password</label>
+        <input type="password" name="confirm_password" required placeholder="Repeat new password">
+      </div>
+      <button type="submit" class="btn app-btn-primary">
+        <i class="fas fa-key"></i> Update Password
+      </button>
+    </form>
   </div>
 
   <!-- Membership Info -->

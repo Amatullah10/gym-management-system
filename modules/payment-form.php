@@ -24,20 +24,21 @@ $error = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $amount  = (float) $_POST['amount'];
-    $service = mysqli_real_escape_string($conn, $_POST['service']);
-    $plan    = mysqli_real_escape_string($conn, $_POST['plan']);
-    $status  = mysqli_real_escape_string($conn, $_POST['member_status']);
-    $method  = mysqli_real_escape_string($conn, $_POST['payment_method'] ?? 'Cash');
-    $txn     = mysqli_real_escape_string($conn, $_POST['transaction_id'] ?? '');
+    $amount       = (float) $_POST['amount'];
+    $service      = mysqli_real_escape_string($conn, $_POST['service']);
+    $plan         = mysqli_real_escape_string($conn, $_POST['plan']);
+    $pay_status   = mysqli_real_escape_string($conn, $_POST['payment_status'] ?? 'Paid');
+    $mem_status   = mysqli_real_escape_string($conn, $_POST['member_status']);
+    $method       = mysqli_real_escape_string($conn, $_POST['payment_method'] ?? 'Cash');
+    $txn          = mysqli_real_escape_string($conn, $_POST['transaction_id'] ?? '');
 
     if (!$amount || !$service || !$plan) {
         $error = 'Please fill in all required fields.';
     } else {
         $ins = mysqli_query($conn, "INSERT INTO payments (member_id, amount, service, plan, status, payment_method, transaction_id)
-                                    VALUES ($member_id, $amount, '$service', '$plan', 'Paid', '$method', '$txn')");
+                                    VALUES ($member_id, $amount, '$service', '$plan', '$pay_status', '$method', '$txn')");
         // Update member status
-        mysqli_query($conn, "UPDATE members SET membership_status='$status' WHERE id=$member_id");
+        mysqli_query($conn, "UPDATE members SET membership_status='$mem_status' WHERE id=$member_id");
 
         if ($ins) {
             // Get the last inserted payment id manually
@@ -140,6 +141,16 @@ include '../layout/sidebar.php';
             <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
               <label style="color:var(--active-color);font-weight:600;margin:0;">Transaction ID <span style="font-weight:400;color:#aaa;">(optional)</span>:</label>
               <input type="text" name="transaction_id" placeholder="e.g. UPI12345" style="max-width:300px;">
+            </div>
+
+            <!-- Payment Status -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+              <label style="color:var(--active-color);font-weight:600;margin:0;">Payment Status:</label>
+              <select name="payment_status" style="max-width:300px;" required>
+                <option value="Paid">Paid</option>
+                <option value="Due">Due</option>
+                <option value="Overdue">Overdue</option>
+              </select>
             </div>
 
             <!-- Member Status -->

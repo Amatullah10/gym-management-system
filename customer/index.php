@@ -20,6 +20,26 @@ $progress = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM progress_repor
 // Workout plan
 $workout = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM workout_plans WHERE member_id=$member_id"));
 
+// Fetch real exercises from the assigned plan in workout_plan_library
+$plan_exercises = [];
+if ($workout && !empty($workout['current_plan'])) {
+    $plan_name_esc = mysqli_real_escape_string($conn, $workout['current_plan']);
+    $lib = mysqli_fetch_assoc(mysqli_query($conn, "SELECT exercises FROM workout_plan_library WHERE name='$plan_name_esc' LIMIT 1"));
+    if ($lib && !empty($lib['exercises'])) {
+        // Format: "Exercise Name: sets x reps, Next Exercise: ..."
+        $raw = explode(',', $lib['exercises']);
+        foreach ($raw as $item) {
+            $parts = explode(':', trim($item), 2);
+            if (count($parts) === 2) {
+                $plan_exercises[] = [
+                    'name' => trim($parts[0]),
+                    'sets' => trim($parts[1])
+                ];
+            }
+        }
+    }
+}
+
 // Recent payments
 $payments_q = mysqli_query($conn, "SELECT * FROM payments WHERE member_id=$member_id ORDER BY payment_date DESC LIMIT 3");
 $payments = [];
@@ -176,20 +196,20 @@ include '../layout/sidebar.php';
           <a href="my-workout.php" style="color:var(--active-color);font-size:13px;text-decoration:none;">Full Plan →</a>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
-          <?php
-          $day_plan = htmlspecialchars($workout['current_plan'] ?? '');
-          $exercises = ['Bench Press','Squats','Pull-ups','Plank','Deadlift','Running'];
-          $muscles   = ['Chest','Legs','Back','Core','Full Body','Cardio'];
-          $sets      = ['4×10','4×12','3×8','3×60s','4×6','30 min'];
-          foreach(array_slice($exercises,0,4) as $i=>$ex):
-          ?>
+          <?php if (!empty($plan_exercises)): ?>
+          <?php foreach(array_slice($plan_exercises, 0, 4) as $ex): ?>
           <div style="background:#fff5f5;border-radius:12px;padding:16px;text-align:center;">
             <div style="font-size:24px;margin-bottom:8px;">💪</div>
-            <div style="font-weight:700;font-size:13px;"><?= $ex ?></div>
-            <div style="font-size:11px;color:#999;margin:3px 0;"><?= $muscles[$i] ?></div>
-            <span style="background:var(--active-color);color:white;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;"><?= $sets[$i] ?></span>
+            <div style="font-weight:700;font-size:13px;"><?= htmlspecialchars($ex['name']) ?></div>
+            <span style="background:var(--active-color);color:white;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin-top:6px;display:inline-block;"><?= htmlspecialchars($ex['sets']) ?></span>
           </div>
           <?php endforeach; ?>
+          <?php else: ?>
+          <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;grid-column:1/-1;">
+            No exercises found for plan: <strong><?= htmlspecialchars($workout['current_plan'] ?? '') ?></strong>.<br>
+            Ask your trainer to update the plan.
+          </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>

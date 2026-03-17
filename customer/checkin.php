@@ -9,10 +9,8 @@ $email = mysqli_real_escape_string($conn, $_SESSION['email']);
 $member = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM members WHERE email='$email'"));
 $member_id = $member['id'] ?? 0;
 
-// Gym coordinates
-define('GYM_LAT', 8.9529887);
-define('GYM_LNG', 72.8159492);
-define('GYM_RADIUS', 100); // meters
+// Gym coordinates — loaded from config (edit config/gym_config.php to change)
+require_once '../config/gym_config.php';
 
 $today = date('Y-m-d');
 $already_checked = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM attendance WHERE member_id=$member_id AND attendance_date='$today' AND status='Present'"));
@@ -39,11 +37,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$already_checked) {
         } else {
             mysqli_query($conn, "INSERT INTO attendance (member_id, attendance_date, status, check_in_time, marked_by) VALUES ($member_id, '$today', 'Present', CURTIME(), '$email')");
         }
-        $already_checked = true;
+        // Re-fetch so $already_checked is a full row (needed for check-out button)
+        $already_checked = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM attendance WHERE member_id=$member_id AND attendance_date='$today' AND status='Present'"));
         $success = "✅ Check-in successful! Welcome to NextGen Fitness.";
     } else {
         $distance_m = round($distance);
         $error = "❌ You are {$distance_m}m away from the gym. You must be within ".GYM_RADIUS."m to check in.";
+    }
+}
+
+// --- Check-Out POST ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
+    $att_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id, check_out_time FROM attendance WHERE member_id=$member_id AND attendance_date='$today' AND status='Present'"));
+    if ($att_row && !$att_row['check_out_time']) {
+        mysqli_query($conn, "UPDATE attendance SET check_out_time=CURTIME() WHERE id={$att_row['id']}");
+        $success = "✅ Checked out successfully! See you next time.";
+        // Re-fetch updated row
+        $already_checked = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM attendance WHERE member_id=$member_id AND attendance_date='$today' AND status='Present'"));
     }
 }
 
@@ -120,8 +130,29 @@ include '../layout/sidebar.php';
     <?php else: ?>
     <div style="font-size:48px;margin:20px 0;">🎉</div>
     <div style="font-size:14px;color:#2e7d32;font-weight:600;">Great job showing up today!</div>
-    <?php if($already_checked && isset($already_checked['check_in_time'])): ?>
-    <div style="font-size:13px;color:#aaa;margin-top:8px;">Checked in at <?= $already_checked['check_in_time'] ?></div>
+    <?php if(is_array($already_checked) && isset($already_checked['check_in_time'])): ?>
+    <div style="font-size:13px;color:#aaa;margin-top:8px;">
+      Checked in at <strong><?= date('h:i A', strtotime($already_checked['check_in_time'])) ?></strong>
+    </div>
+    <?php endif; ?>
+
+    <?php if(is_array($already_checked) && empty($already_checked['check_out_time'])): ?>
+    <!-- Check-Out Button -->
+    <form method="POST" style="margin-top:20px;">
+      <input type="hidden" name="checkout" value="1">
+      <button type="submit" class="btn" style="background:#d32f2f;color:#fff;padding:13px 36px;border-radius:10px;font-size:15px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+        <i class="fas fa-right-from-bracket"></i> Check Out
+      </button>
+    </form>
+    <p style="font-size:12px;color:#aaa;margin-top:10px;">Click when you leave the gym</p>
+    <?php elseif(is_array($already_checked) && !empty($already_checked['check_out_time'])): ?>
+    <!-- Already checked out -->
+    <div style="margin-top:20px;padding:12px 20px;background:#e8f5e9;border-radius:10px;display:inline-block;">
+      <i class="fas fa-check-circle" style="color:#2e7d32;margin-right:6px;"></i>
+      <span style="font-size:14px;color:#2e7d32;font-weight:600;">
+        Checked out at <?= date('h:i A', strtotime($already_checked['check_out_time'])) ?>
+      </span>
+    </div>
     <?php endif; ?>
     <?php endif; ?>
   </div>
@@ -130,7 +161,7 @@ include '../layout/sidebar.php';
   <div class="table-container">
     <div class="table-header"><h3>Attendance History</h3></div>
     <table class="modern-table">
-      <thead><tr><th>Date</th><th>Status</th><th>Check-in Time</th></tr></thead>
+      <thead><tr><th>Date</th><th>Status</th><th>Check-in Time</th><th>Check-out Time</th></tr></thead>
       <tbody>
         <?php if(empty($records)): ?>
         <tr><td colspan="3" style="text-align:center;padding:30px;color:#aaa;">No attendance records yet.</td></tr>
@@ -138,7 +169,8 @@ include '../layout/sidebar.php';
         <tr>
           <td><?= date('d M Y', strtotime($r['attendance_date'])) ?></td>
           <td><span class="status-badge <?= $r['status']==='Present'?'active':($r['status']==='Absent'?'expired':'pending') ?>"><?= $r['status'] ?></span></td>
-          <td><?= $r['check_in_time'] ?? '—' ?></td>
+          <td><?= $r['check_in_time'] ? date('h:i A', strtotime($r['check_in_time'])) : '—' ?></td>
+          <td><?= $r['check_out_time'] ? date('h:i A', strtotime($r['check_out_time'])) : '—' ?></td>
         </tr>
         <?php endforeach; endif; ?>
       </tbody>
