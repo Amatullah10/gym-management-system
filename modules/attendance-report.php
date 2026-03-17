@@ -284,7 +284,7 @@ $total_change = $prev_total > 0 ? round((($total_attendance - $prev_total) / $pr
             <option value="this_year" <?= $period == 'this_year' ? 'selected' : '' ?>>This Year</option>
           </select>
           <button class="btn app-btn-primary" onclick="exportReport()">
-            <i class="fa-solid fa-download"></i> Export Report
+            <i class="fa-solid fa-file-excel"></i> Export to Excel
           </button>
         </div>
       </div>
@@ -604,51 +604,78 @@ function changePeriod(period) {
 // Export report to Excel
 function exportReport() {
     const topAttendees = <?= json_encode($top_attendees) ?>;
-    
-    // Create workbook
+    const weeklyData   = <?= json_encode($weekly_data) ?>;
+
     const wb = XLSX.utils.book_new();
-    
-    // Summary Sheet
-    const summaryData = [
-        ['Attendance Report'],
-        ['Period', '<?= ucwords(str_replace('_', ' ', $period)) ?>'],
-        ['Date Range', '<?= date('M d, Y', strtotime($start_date)) ?> - <?= date('M d, Y', strtotime($end_date)) ?>'],
+
+    /* ── Sheet 1: Summary ── */
+    const rows = [
+        ['Attendance Report - <?= date("d M Y") ?>'],
         [],
-        ['Statistics'],
-        ['Total Attendance', <?= $total_attendance ?>],
-        ['Attendance Rate', '<?= $attendance_rate ?>%'],
-        ['Average Check-in Time', '<?= $avg_check_in ?>'],
-        ['Absent Members', <?= $absent_count ?>],
+        ['Period',               '<?= ucwords(str_replace('_', ' ', $period)) ?>'],
+        ['Date Range',           '<?= date('M d, Y', strtotime($start_date)) ?> - <?= date('M d, Y', strtotime($end_date)) ?>'],
+        ['Generated On',         new Date().toLocaleString()],
         [],
-        ['Distribution'],
-        ['Present', <?= $distribution['present'] ?>],
-        ['Absent', <?= $distribution['absent'] ?>],
-        ['Late', <?= $distribution['late'] ?>]
+        ['SUMMARY STATISTICS'],
+        ['Metric',               'Value'],
+        ['Total Attendance',     <?= $total_attendance ?>],
+        ['Attendance Rate',      '<?= $attendance_rate ?>%'],
+        ['Average Check-in Time','<?= $avg_check_in ?>'],
+        ['Absent Members',       <?= $absent_count ?>],
+        [],
+        ['ATTENDANCE DISTRIBUTION'],
+        ['Status',               'Count'],
+        ['Present',              <?= (int)($distribution['present'] ?? 0) ?>],
+        ['Absent',               <?= (int)($distribution['absent']  ?? 0) ?>],
+        ['Late',                 <?= (int)($distribution['late']    ?? 0) ?>],
     ];
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
-    
-    // Top Attendees Sheet
-    const attendeesData = [
+
+    const ws1 = XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths for summary sheet
+    ws1['!cols'] = [{ wch: 28 }, { wch: 30 }];
+
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+
+    /* ── Sheet 2: Top Attendees ── */
+    const attendeesRows = [
+        ['Top Attendees - <?= date("d M Y") ?>'],
+        [],
         ['Rank', 'Member ID', 'Name', 'Days Present', 'Attendance Rate']
     ];
-    
-    topAttendees.forEach(attendee => {
-        attendeesData.push([
-            attendee.rank,
-            'MEM' + String(attendee.id).padStart(3, '0'),
-            attendee.full_name,
-            attendee.days_present,
-            attendee.attendance_rate + '%'
+
+    topAttendees.forEach(a => {
+        attendeesRows.push([
+            a.rank,
+            'MEM' + String(a.id).padStart(3, '0'),
+            a.full_name,
+            a.days_present,
+            a.attendance_rate + '%'
         ]);
     });
-    
-    const attendeesSheet = XLSX.utils.aoa_to_sheet(attendeesData);
-    XLSX.utils.book_append_sheet(wb, attendeesSheet, 'Top Attendees');
-    
-    // Download
-    const fileName = 'Attendance_Report_' + new Date().toISOString().split('T')[0] + '.xlsx';
-    XLSX.writeFile(wb, fileName);
+
+    const ws2 = XLSX.utils.aoa_to_sheet(attendeesRows);
+    ws2['!cols'] = [{ wch: 8 }, { wch: 12 }, { wch: 28 }, { wch: 15 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Top Attendees');
+
+    /* ── Sheet 3: Weekly Breakdown ── */
+    const weeklyRows = [
+        ['Weekly Attendance Breakdown - <?= date("d M Y") ?>'],
+        [],
+        ['Day', 'Present', 'Absent', 'Late', 'Total']
+    ];
+
+    weeklyData.forEach(d => {
+        const total = (parseInt(d.present) || 0) + (parseInt(d.absent) || 0) + (parseInt(d.late) || 0);
+        weeklyRows.push([d.day_name, d.present, d.absent, d.late, total]);
+    });
+
+    const ws3 = XLSX.utils.aoa_to_sheet(weeklyRows);
+    ws3['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Weekly Breakdown');
+
+    /* ── Download ── */
+    XLSX.writeFile(wb, 'Attendance_Report_<?= date("Y-m-d") ?>.xlsx');
 }
 </script>
 
