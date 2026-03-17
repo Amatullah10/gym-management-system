@@ -164,30 +164,141 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
 <script>
 function exportToExcel() {
     const equipmentData = <?= json_encode($all_equipment) ?>;
+    const reportDate    = '<?= date("d M Y") ?>';
+    const fileName      = 'Equipment_Report_<?= date("Y-m-d") ?>.xlsx';
 
-    const rows = [
-        ['Equipment Report - <?= date("d M Y") ?>'],
+    const wb = XLSX.utils.book_new();
+
+    // ── SHEET 1: SUMMARY ─────────────────────────────────────────────────────
+    const summaryRows = [
+        ['NEXTGEN FITNESS — EQUIPMENT REPORT'],
+        ['Generated on: ' + reportDate],
         [],
-        ['Summary'],
-        ['Total Equipment Types', <?= $total ?>],
-        ['Working', <?= $working ?>],
-        ['Under Maintenance', <?= $maintenance ?>],
-        ['Out of Order', <?= $out_of_order ?>],
-        ['Total Units', <?= $total_qty ?? 0 ?>],
+        ['OVERVIEW'],
+        ['Metric', 'Count', 'Percentage'],
+        ['Total Equipment Types', <?= $total ?>, '100%'],
+        ['Working',              <?= $working ?>,      '<?= $working_pct ?>%'],
+        ['Under Maintenance',    <?= $maintenance ?>,  '<?= $maintenance_pct ?>%'],
+        ['Out of Order',         <?= $out_of_order ?>, '<?= $out_pct ?>%'],
+        [],
+        ['UNIT COUNTS'],
+        ['Metric', 'Units'],
+        ['Total Units',   <?= $total_qty ?? 0 ?>],
         ['Working Units', <?= $working_qty ?? 0 ?>],
-        [],
-        ['Full Equipment List'],
-        ['#', 'Equipment Name', 'Total Quantity', 'Working Units', 'Status', 'Added On']
     ];
 
-    equipmentData.forEach((e, i) => {
-        rows.push([i + 1, e.equipment_name, e.quantity, e.working_units ?? 0, e.status, e.created_at]);
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
+
+    // Column widths for summary sheet
+    ws1['!cols'] = [
+        { wch: 28 },
+        { wch: 14 },
+        { wch: 14 },
+    ];
+
+    // Merge title cell across columns
+    ws1['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 2 } },
+        { s: { r: 10, c: 0 }, e: { r: 10, c: 2 } },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+
+    // ── SHEET 2: FULL EQUIPMENT LIST ─────────────────────────────────────────
+    const listHeader = [
+        ['NEXTGEN FITNESS — FULL EQUIPMENT LIST'],
+        ['Generated on: ' + reportDate],
+        [],
+        ['#', 'Equipment Name', 'Total Quantity', 'Working Units', 'Non-Working Units', 'Status', 'Added On'],
+    ];
+
+    const listRows = equipmentData.map((e, i) => {
+        const total    = parseInt(e.quantity)      || 0;
+        const working  = parseInt(e.working_units) || 0;
+        const nonWorking = total - working;
+        const added    = e.created_at ? e.created_at.split(' ')[0] : '';
+        return [
+            i + 1,
+            e.equipment_name,
+            total,
+            working,
+            nonWorking,
+            e.status,
+            added,
+        ];
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Equipment Report');
-    XLSX.writeFile(wb, 'Equipment_Report_<?= date("Y-m-d") ?>.xlsx');
+    const ws2 = XLSX.utils.aoa_to_sheet([...listHeader, ...listRows]);
+
+    // Column widths for list sheet
+    ws2['!cols'] = [
+        { wch: 5  },   // #
+        { wch: 28 },   // Equipment Name
+        { wch: 16 },   // Total Quantity
+        { wch: 16 },   // Working Units
+        { wch: 18 },   // Non-Working Units
+        { wch: 16 },   // Status
+        { wch: 14 },   // Added On
+    ];
+
+    // Merge title rows
+    ws2['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws2, 'Equipment List');
+
+    // ── SHEET 3: STATUS-WISE BREAKDOWN ───────────────────────────────────────
+    const statusOrder = ['Working', 'Maintenance', 'Out of Order'];
+
+    const statusRows = [
+        ['NEXTGEN FITNESS — STATUS-WISE BREAKDOWN'],
+        ['Generated on: ' + reportDate],
+        [],
+    ];
+
+    statusOrder.forEach(status => {
+        const filtered = equipmentData.filter(e => e.status === status);
+        if (filtered.length === 0) return;
+
+        statusRows.push([status.toUpperCase()]);
+        statusRows.push(['#', 'Equipment Name', 'Total Quantity', 'Working Units', 'Added On']);
+
+        filtered.forEach((e, i) => {
+            statusRows.push([
+                i + 1,
+                e.equipment_name,
+                parseInt(e.quantity)      || 0,
+                parseInt(e.working_units) || 0,
+                e.created_at ? e.created_at.split(' ')[0] : '',
+            ]);
+        });
+
+        statusRows.push([]); // blank row between groups
+    });
+
+    const ws3 = XLSX.utils.aoa_to_sheet(statusRows);
+
+    ws3['!cols'] = [
+        { wch: 5  },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 14 },
+    ];
+
+    ws3['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws3, 'By Status');
+
+    // ── DOWNLOAD ─────────────────────────────────────────────────────────────
+    XLSX.writeFile(wb, fileName);
 }
 </script>
 </body>

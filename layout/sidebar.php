@@ -202,20 +202,10 @@ $user_menu = $menus[$user_role] ?? [];
 
       <!-- ── Payments — Admin, Accountant ── -->
       <?php if (!empty($user_menu['payments'])): ?>
-      <li class="submenu">
-        <input type="checkbox" id="payments-menu" class="toggle-input">
-        <label for="payments-menu" class="submenu-label">
+      <li class="<?php if($page=='payments') echo 'active'; ?>">
+        <a href="../modules/payments.php">
           <i class="fas fa-credit-card"></i><span>Payments</span>
-        </label>
-        <ul class="submenu-items">
-          <li class="<?php if($page=='payments') echo 'active'; ?>">
-            <a href="../modules/payments.php">
-              <i class="fas fa-arrow-right"></i> All Payment Records
-            </a>
-          </li>
-          
-          
-        </ul>
+        </a>
       </li>
       <?php endif; ?>
 
