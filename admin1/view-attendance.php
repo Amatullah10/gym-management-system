@@ -91,162 +91,183 @@ $total_records = count($attendance_records);
   <link rel="stylesheet" href="../css/common.css">
   
   <style>
-    /* Modal Styles */
+    /* ── Modal Overlay ── */
     .modal-overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 9999;
+      inset: 0;                          /* top/right/bottom/left: 0 */
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 99999;                    /* well above everything */
       align-items: center;
       justify-content: center;
     }
-    
+
     .modal-overlay.active {
       display: flex;
     }
-    
-    .modal-content {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      max-width: 500px;
-      width: 90%;
+
+    /* ── Modal Card ── */
+    .modal-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 36px 32px 32px;
+      width: 540px;
+      max-width: 95vw;
       position: relative;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      animation: modalIn 0.22s ease;
     }
-    
-    .modal-close {
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-18px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1);    }
+    }
+
+    /* ── Close Button ── */
+    .modal-close-btn {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 32px;
-      height: 32px;
+      top: 14px;
+      right: 14px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      background: #fee;
-      color: var(--active-color);
+      background: #fce8e8;
+      color: #c0392b;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      transition: all 0.3s;
+      font-size: 16px;
+      transition: background 0.2s, color 0.2s;
     }
-    
-    .modal-close:hover {
-      background: var(--active-color);
-      color: white;
+
+    .modal-close-btn:hover {
+      background: #c0392b;
+      color: #fff;
     }
-    
-    .modal-title {
-      font-size: 22px;
+
+    /* ── Modal Header ── */
+    .modal-header-title {
+      font-size: 20px;
       font-weight: 700;
       color: #1a1a1a;
-      margin-bottom: 25px;
+      margin: 0 0 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #f0f0f0;
     }
-    
-    .modal-grid {
+
+    /* ── Info Grid ── */
+    .modal-info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 20px 24px;
     }
-    
-    .modal-field {
-      margin-bottom: 0;
+
+    .modal-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
-    
-    .modal-field label {
-      font-size: 13px;
-      color: #999;
-      margin-bottom: 5px;
-      display: block;
-      font-weight: 500;
-    }
-    
-    .modal-field .value {
-      font-size: 16px;
-      color: #1a1a1a;
-      font-weight: 600;
-    }
-    
-    .modal-field.full-width {
+
+    .modal-info-item.full {
       grid-column: 1 / -1;
     }
-    
-    /* Status badge in modal */
-    .modal-status-badge {
+
+    .modal-info-item .info-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #999;
+    }
+
+    .modal-info-item .info-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    /* ── Status Badges (modal) ── */
+    .badge-status {
       display: inline-block;
-      padding: 6px 14px;
+      padding: 5px 16px;
       border-radius: 20px;
       font-size: 13px;
       font-weight: 600;
+      letter-spacing: 0.3px;
     }
-    
-    .modal-status-badge.present {
-      background: #2e7d32;
-      color: white;
+
+    .badge-status.present  { background: #2e7d32; color: #fff; }
+    .badge-status.absent   { background: #d32f2f; color: #fff; }
+    .badge-status.late     { background: #f57c00; color: #fff; }
+    .badge-status.unmarked { background: #757575; color: #fff; }
+
+    /* ── Status Badges (table) ── */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
     }
-    
-    .modal-status-badge.absent {
-      background: #d32f2f;
-      color: white;
+
+    .status-badge.present  { background: #2e7d32; color: #fff; }
+    .status-badge.absent   { background: #d32f2f; color: #fff; }
+    .status-badge.late     { background: #f57c00; color: #fff; }
+    .status-badge.unmarked { background: #757575; color: #fff; }
+
+    /* ── Eye / Action Button ── */
+    .btn-action {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all 0.2s;
     }
-    
-    .modal-status-badge.late {
-      background: #f57c00;
-      color: white;
-    }
-    
-    /* Eye button styling */
+
     .btn-action.view {
       background: #f3e5f5;
       color: #9c27b0;
     }
-    
+
     .btn-action.view:hover {
       background: #9c27b0;
-      color: white;
+      color: #fff;
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
     }
-    
-    /* Status badges for table */
-    .status-badge.present {
-      background: #2e7d32;
-      color: white;
-    }
-    
-    .status-badge.absent {
-      background: #d32f2f;
-      color: white;
-    }
-    
-    .status-badge.late {
-      background: #f57c00;
-      color: white;
-    }
-    
-    /* Date input styling */
+
+    /* ── Date Input ── */
     .date-input {
-      padding: 12px 15px;
+      padding: 10px 15px 10px 42px;
       border: 1px solid #e0e0e0;
       border-radius: 10px;
       font-size: 14px;
       color: #333;
-      background: white;
+      background: #fff;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: border-color 0.2s, box-shadow 0.2s;
       min-width: 180px;
+      height: 44px;
     }
-    
+
     .date-input:focus {
       outline: none;
-      border-color: var(--active-color);
+      border-color: var(--active-color, #941614);
       box-shadow: 0 0 0 3px rgba(148, 22, 20, 0.1);
+    }
+
+    /* Divider inside modal */
+    .modal-divider {
+      border: none;
+      border-top: 1px solid #f0f0f0;
+      margin: 20px 0 0;
     }
   </style>
 </head>
@@ -256,7 +277,7 @@ $total_records = count($attendance_records);
 
 <div class="main-wrapper">
   <div class="main-content">
-    
+
     <!-- Page Header -->
     <div class="page-header">
       <div class="d-flex justify-content-between align-items-center">
@@ -269,35 +290,36 @@ $total_records = count($attendance_records);
         </button>
       </div>
     </div>
-    
-    <!-- Attendance Records Section -->
+
+    <!-- Section Title -->
     <div style="margin-bottom: 20px;">
       <h2 style="font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0;">
         Attendance Records
       </h2>
     </div>
-    
-    <!-- Search and Filter Bar -->
-    <div class="d-flex gap-3 mb-4">
+
+    <!-- Search & Filter Bar -->
+    <div class="d-flex gap-3 mb-4 flex-wrap">
       <div style="position: relative;">
-        <i class="fa-solid fa-calendar" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;"></i>
-        <input type="date" id="dateFilter" class="date-input" placeholder="Filter by date" style="padding-left: 45px;" value="<?= htmlspecialchars($date_filter) ?>">
+        <i class="fa-solid fa-calendar" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#999;pointer-events:none;"></i>
+        <input type="date" id="dateFilter" class="date-input"
+               value="<?= htmlspecialchars($date_filter) ?>">
       </div>
-      
+
       <div class="search-box flex-grow-1">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" id="searchInput" placeholder="Search by name or member ID...">
       </div>
-      
+
       <select class="filter-select" id="statusFilter">
         <option value="">All Status</option>
-        <option value="Present" <?= $status_filter == 'Present' ? 'selected' : '' ?>>Present</option>
-        <option value="Absent" <?= $status_filter == 'Absent' ? 'selected' : '' ?>>Absent</option>
-        <option value="Late" <?= $status_filter == 'Late' ? 'selected' : '' ?>>Late</option>
+        <option value="Present"   <?= $status_filter == 'Present'  ? 'selected' : '' ?>>Present</option>
+        <option value="Absent"    <?= $status_filter == 'Absent'   ? 'selected' : '' ?>>Absent</option>
+        <option value="Late"      <?= $status_filter == 'Late'     ? 'selected' : '' ?>>Late</option>
       </select>
     </div>
-    
-    <!-- Attendance Records Table -->
+
+    <!-- Attendance Table -->
     <div class="members-table-container">
       <table class="members-table">
         <thead>
@@ -314,63 +336,52 @@ $total_records = count($attendance_records);
         </thead>
         <tbody id="attendanceTableBody">
           <?php if (count($attendance_records) > 0): ?>
-            <?php foreach ($attendance_records as $record): 
-              $memberId = 'MEM' . str_pad($record['member_id'], 3, '0', STR_PAD_LEFT);
+            <?php foreach ($attendance_records as $record):
+              $memberId      = 'MEM' . str_pad($record['member_id'], 3, '0', STR_PAD_LEFT);
               $formattedDate = date('M d, Y', strtotime($record['attendance_date']));
-              
-              // Determine if late (check-in after 8:00 AM for example)
+
+              // Determine display status
               $status = $record['status'];
-              if ($status == 'Present' && $record['check_in_time']) {
-                $checkInHour = (int)date('H', strtotime($record['check_in_time']));
-                if ($checkInHour >= 9) {
-                  $status = 'Late';
-                }
+              if ($status === 'Present' && $record['check_in_time']) {
+                  $checkInHour = (int) date('H', strtotime($record['check_in_time']));
+                  if ($checkInHour >= 9) {
+                      $status = 'Late';
+                  }
               }
+
+              // Build a clean JSON object for the JS modal
+              $modalData = json_encode([
+                  'member_id'       => $record['member_id'],
+                  'full_name'       => $record['full_name'],
+                  'attendance_date' => $record['attendance_date'],
+                  'membership_type' => $record['membership_type'],
+                  'check_in_time'   => $record['check_in_time'],
+                  'check_out_time'  => $record['check_out_time'],
+                  'status'          => $status,
+              ]);
             ?>
-            <tr data-record='<?= json_encode($record) ?>' data-status="<?= strtolower($status) ?>">
-              
-              <!-- Date -->
-              <td>
-                <span style="color: #666;"><?= $formattedDate ?></span>
-              </td>
-              
-              <!-- Member ID -->
-              <td>
-                <span style="font-weight: 600; color: #333;"><?= $memberId ?></span>
-              </td>
-              
-              <!-- Name -->
-              <td>
-                <span style="color: #1a1a1a; font-weight: 500;"><?= htmlspecialchars($record['full_name']) ?></span>
-              </td>
-              
-              <!-- Plan -->
-              <td>
-                <span style="color: #666;"><?= htmlspecialchars($record['membership_type']) ?></span>
-              </td>
-              
-              <!-- Check In -->
-              <td>
-                <span style="color: #666;">
-                  <?= $record['check_in_time'] ? date('h:i A', strtotime($record['check_in_time'])) : '-' ?>
-                </span>
-              </td>
-              
-              <!-- Check Out -->
-              <td>
-                <span style="color: #666;">
-                  <?= $record['check_out_time'] ? date('h:i A', strtotime($record['check_out_time'])) : '-' ?>
-                </span>
-              </td>
-              
-              <!-- Status -->
+            <tr data-record='<?= htmlspecialchars($modalData, ENT_QUOTES) ?>'
+                data-status="<?= strtolower($status) ?>">
+
+              <td><span style="color:#666;"><?= $formattedDate ?></span></td>
+              <td><span style="font-weight:600;color:#333;"><?= $memberId ?></span></td>
+              <td><span style="font-weight:500;color:#1a1a1a;"><?= htmlspecialchars($record['full_name']) ?></span></td>
+              <td><span style="color:#666;"><?= htmlspecialchars($record['membership_type']) ?></span></td>
+
+              <td><span style="color:#666;">
+                <?= $record['check_in_time']  ? date('h:i A', strtotime($record['check_in_time']))  : '—' ?>
+              </span></td>
+
+              <td><span style="color:#666;">
+                <?= $record['check_out_time'] ? date('h:i A', strtotime($record['check_out_time'])) : '—' ?>
+              </span></td>
+
               <td>
                 <span class="status-badge <?= strtolower($status) ?>">
                   <?= htmlspecialchars($status) ?>
                 </span>
               </td>
-              
-              <!-- Actions -->
+
               <td>
                 <button class="btn-action view" onclick="viewDetails(this)" title="View Details">
                   <i class="fa-regular fa-eye"></i>
@@ -380,60 +391,75 @@ $total_records = count($attendance_records);
             <?php endforeach; ?>
           <?php else: ?>
             <tr>
-              <td colspan="8" class="text-center" style="padding: 40px; color: #999;">No attendance records found.</td>
+              <td colspan="8" class="text-center"
+                  style="padding:40px;color:#999;">
+                No attendance records found.
+              </td>
             </tr>
           <?php endif; ?>
         </tbody>
       </table>
     </div>
-    
+
   </div>
 </div>
 
-<!-- Modal for Attendance Details -->
-<div class="modal-overlay" id="attendanceModal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal()">
+<!-- ══════════════════════════════════════
+     ATTENDANCE DETAILS MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="attendanceModal" onclick="handleOverlayClick(event)">
+  <div class="modal-card" id="attendanceModalCard">
+
+    <!-- Close -->
+    <button class="modal-close-btn" onclick="closeModal()" title="Close">
       <i class="fa-solid fa-xmark"></i>
     </button>
-    
-    <h2 class="modal-title">Attendance Details</h2>
-    
-    <div class="modal-grid">
-      <div class="modal-field">
-        <label>Member ID</label>
-        <div class="value" id="modalMemberId"></div>
+
+    <!-- Title -->
+    <h2 class="modal-header-title">
+      <i class="fa-solid fa-clipboard-list" style="color:#941614;margin-right:8px;"></i>
+      Attendance Details
+    </h2>
+
+    <!-- Info Grid -->
+    <div class="modal-info-grid">
+
+      <div class="modal-info-item">
+        <span class="info-label">Member ID</span>
+        <span class="info-value" id="modalMemberId">—</span>
       </div>
-      
-      <div class="modal-field">
-        <label>Name</label>
-        <div class="value" id="modalName"></div>
+
+      <div class="modal-info-item">
+        <span class="info-label">Name</span>
+        <span class="info-value" id="modalName">—</span>
       </div>
-      
-      <div class="modal-field">
-        <label>Date</label>
-        <div class="value" id="modalDate"></div>
+
+      <div class="modal-info-item">
+        <span class="info-label">Date</span>
+        <span class="info-value" id="modalDate">—</span>
       </div>
-      
-      <div class="modal-field">
-        <label>Plan</label>
-        <div class="value" id="modalPlan"></div>
+
+      <div class="modal-info-item">
+        <span class="info-label">Plan</span>
+        <span class="info-value" id="modalPlan">—</span>
       </div>
-      
-      <div class="modal-field">
-        <label>Check In</label>
-        <div class="value" id="modalCheckIn"></div>
+
+      <div class="modal-info-item">
+        <span class="info-label">Check In</span>
+        <span class="info-value" id="modalCheckIn">—</span>
       </div>
-      
-      <div class="modal-field">
-        <label>Check Out</label>
-        <div class="value" id="modalCheckOut"></div>
+
+      <div class="modal-info-item">
+        <span class="info-label">Check Out</span>
+        <span class="info-value" id="modalCheckOut">—</span>
       </div>
-      
-      <div class="modal-field full-width">
-        <label>Status</label>
+
+      <div class="modal-info-item full">
+        <hr class="modal-divider">
+        <span class="info-label" style="margin-top:4px;">Status</span>
         <div id="modalStatus"></div>
       </div>
+
     </div>
   </div>
 </div>
@@ -442,137 +468,114 @@ $total_records = count($attendance_records);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// View attendance details in modal
+/* ─── Helper: format time string "HH:MM:SS" → "hh:mm AM/PM" ─── */
+function formatTime(timeStr) {
+  if (!timeStr) return '—';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${String(hour).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+/* ─── Helper: format date "YYYY-MM-DD" → "Month DD, YYYY" ─── */
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  // Parse as local date (avoid UTC shift)
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  return `${months[mo - 1]} ${String(d).padStart(2,'0')}, ${y}`;
+}
+
+/* ─── Open modal ─── */
 function viewDetails(button) {
-  const row = button.closest('tr');
+  const row    = button.closest('tr');
   const record = JSON.parse(row.getAttribute('data-record'));
-  
+
   const memberId = 'MEM' + String(record.member_id).padStart(3, '0');
-  const formattedDate = new Date(record.attendance_date).toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  // Determine status (Late if check-in >= 9 AM)
-  let status = record.status;
-  if (status === 'Present' && record.check_in_time) {
-    const checkInHour = parseInt(record.check_in_time.split(':')[0]);
-    if (checkInHour >= 9) {
-      status = 'Late';
-    }
-  }
-  
-  // Populate modal
+
   document.getElementById('modalMemberId').textContent = memberId;
-  document.getElementById('modalName').textContent = record.full_name;
-  document.getElementById('modalDate').textContent = formattedDate;
-  document.getElementById('modalPlan').textContent = record.membership_type;
-  document.getElementById('modalCheckIn').textContent = record.check_in_time 
-    ? new Date('2000-01-01 ' + record.check_in_time).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    : '-';
-  document.getElementById('modalCheckOut').textContent = record.check_out_time 
-    ? new Date('2000-01-01 ' + record.check_out_time).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    : '-';
-  
-  document.getElementById('modalStatus').innerHTML = 
-    `<span class="modal-status-badge ${status.toLowerCase()}">${status}</span>`;
-  
-  // Show modal
+  document.getElementById('modalName').textContent     = record.full_name;
+  document.getElementById('modalDate').textContent     = formatDate(record.attendance_date);
+  document.getElementById('modalPlan').textContent     = record.membership_type;
+  document.getElementById('modalCheckIn').textContent  = formatTime(record.check_in_time);
+  document.getElementById('modalCheckOut').textContent = formatTime(record.check_out_time);
+
+  const status = record.status || 'Unmarked';
+  document.getElementById('modalStatus').innerHTML =
+    `<span class="badge-status ${status.toLowerCase()}">${status}</span>`;
+
   document.getElementById('attendanceModal').classList.add('active');
 }
 
-// Close modal
+/* ─── Close modal ─── */
 function closeModal() {
   document.getElementById('attendanceModal').classList.remove('active');
 }
 
-// Close modal on overlay click
-document.getElementById('attendanceModal').addEventListener('click', function(e) {
-  if (e.target === this) {
+/* ─── Close on overlay click (not on card click) ─── */
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('attendanceModal')) {
     closeModal();
   }
+}
+
+/* ─── Close on Escape key ─── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
 });
 
-// Date filter
-document.getElementById('dateFilter').addEventListener('change', function() {
-  applyFilters();
-});
+/* ─── Date filter ─── */
+document.getElementById('dateFilter').addEventListener('change', applyFilters);
 
-// Status filter
-document.getElementById('statusFilter').addEventListener('change', function() {
-  applyFilters();
-});
+/* ─── Status filter ─── */
+document.getElementById('statusFilter').addEventListener('change', applyFilters);
 
 function applyFilters() {
-  const date = document.getElementById('dateFilter').value;
+  const date   = document.getElementById('dateFilter').value;
   const status = document.getElementById('statusFilter').value;
-  
   let url = 'view-attendance.php?';
-  if (date) url += 'date=' + date + '&';
-  if (status) url += 'status=' + status;
-  
+  if (date)   url += 'date='   + encodeURIComponent(date)   + '&';
+  if (status) url += 'status=' + encodeURIComponent(status);
   window.location.href = url;
 }
 
-// Search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-  const searchTerm = this.value.toLowerCase();
-  const rows = document.querySelectorAll('#attendanceTableBody tr[data-record]');
-  
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(searchTerm) ? '' : 'none';
+/* ─── Live search ─── */
+document.getElementById('searchInput').addEventListener('keyup', function () {
+  const term = this.value.toLowerCase();
+  document.querySelectorAll('#attendanceTableBody tr[data-record]').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
   });
 });
 
-// Export to CSV
+/* ─── Export CSV ─── */
 function exportToCSV() {
   const rows = document.querySelectorAll('#attendanceTableBody tr[data-record]');
-  
-  if (rows.length === 0) {
-    alert('No records to export');
-    return;
-  }
-  
+  if (!rows.length) { alert('No records to export'); return; }
+
   let csv = 'Date,Member ID,Name,Plan,Check In,Check Out,Status\n';
-  
   rows.forEach(row => {
-    if (row.style.display !== 'none') {
-      const cells = row.querySelectorAll('td');
-      const rowData = [];
-      
-      // Get first 7 cells (exclude Actions column)
-      for (let i = 0; i < 7; i++) {
-        let text = cells[i].textContent.trim();
-        // Escape quotes and wrap in quotes if contains comma
-        text = text.replace(/"/g, '""');
-        if (text.includes(',')) {
-          text = '"' + text + '"';
-        }
-        rowData.push(text);
-      }
-      
-      csv += rowData.join(',') + '\n';
+    if (row.style.display === 'none') return;
+    const cells = row.querySelectorAll('td');
+    const data  = [];
+    for (let i = 0; i < 7; i++) {
+      let txt = cells[i].textContent.trim().replace(/"/g, '""');
+      if (txt.includes(',')) txt = '"' + txt + '"';
+      data.push(txt);
     }
+    csv += data.join(',') + '\n';
   });
-  
-  // Create download link
+
   const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'attendance_records_' + new Date().toISOString().split('T')[0] + '.csv';
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {
+    href: url,
+    download: 'attendance_records_' + new Date().toISOString().split('T')[0] + '.csv'
+  });
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+  URL.revokeObjectURL(url);
 }
 </script>
 
