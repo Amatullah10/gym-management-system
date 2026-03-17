@@ -85,8 +85,11 @@ $user_menu = $menus[$user_role] ?? [];
 
       <!-- ── Dashboard ── -->
       <?php if (!empty($user_menu['dashboard'])): ?>
+      <?php
+        $dashboard_file = ($user_role === 'admin') ? 'dashboard1.php' : 'index.php';
+      ?>
       <li class="<?php if($page=='dashboard') echo 'active'; ?>">
-        <a href="<?= $base ?>dashboard1.php">
+        <a href="<?= $base . $dashboard_file ?>">
           <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
         </a>
       </li>
