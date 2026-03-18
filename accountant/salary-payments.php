@@ -10,21 +10,29 @@ $page_title = 'Salary Payments - Gym Management';
 
 $current_month = date('Y-m');
 
-// Handle Pay Now
-if (isset($_POST['pay_now']) && !empty($_POST['salary_id'])) {
-    $sid = (int)$_POST['salary_id'];
-    mysqli_query($conn, "UPDATE salary_payments SET status='Paid', payment_date=NOW() WHERE id=$sid");
-    header("Location: salary-payments.php");
+// Safe query helper
+function safe_query_value($conn, $sql) {
+    $res = @mysqli_query($conn, $sql);
+    if (!$res) return 0;
+    $row = mysqli_fetch_assoc($res);
+    return $row['t'] ?? 0;
+}
+
+// Handle Pay Now via GET
+if (isset($_GET['pay_now']) && !empty($_GET['salary_id'])) {
+    $sid = (int)$_GET['salary_id'];
+    mysqli_query($conn, "UPDATE salary_payments SET status='Paid', payment_date=NOW() WHERE id=$sid AND status != 'Paid'");
+    header("Location: salary-payments.php?paid=1");
     exit();
 }
 
 // Summary stats
-$total_paid_amount  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Paid'"))['t'];
-$total_paid_staff   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Paid'"))['t'];
-$pending_amount     = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Pending'"))['t'];
-$pending_staff      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Pending'"))['t'];
-$processing_amount  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Processing'"))['t'];
-$processing_staff   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Processing'"))['t'];
+$total_paid_amount  = safe_query_value($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Paid'");
+$total_paid_staff   = safe_query_value($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Paid'");
+$pending_amount     = safe_query_value($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Pending'");
+$pending_staff      = safe_query_value($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Pending'");
+$processing_amount  = safe_query_value($conn, "SELECT SUM(net_salary) as t FROM salary_payments WHERE status='Processing'");
+$processing_staff   = safe_query_value($conn, "SELECT COUNT(DISTINCT staff_id) as t FROM salary_payments WHERE status='Processing'");
 
 // Filters
 $filter_period = isset($_GET['period']) ? $_GET['period'] : 'All';
@@ -44,8 +52,8 @@ elseif ($filter_status === 'Processing') { $where .= " AND sp.status='Processing
 if ($search !== '') { $where .= " AND s.full_name LIKE '%$search%'"; }
 
 $salaries = [];
-$res = mysqli_query($conn, "
-    SELECT sp.*, s.full_name, s.role AS staff_role
+$res = @mysqli_query($conn, "
+    SELECT sp.*, s.full_name, s.role AS staff_role, s.email, s.phone
     FROM salary_payments sp
     JOIN staff s ON sp.staff_id = s.id
     $where
@@ -53,7 +61,7 @@ $res = mysqli_query($conn, "
       CASE sp.status WHEN 'Pending' THEN 1 WHEN 'Processing' THEN 2 ELSE 3 END,
       sp.period_month DESC
 ");
-while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; }
+if ($res) { while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; } }
 ?>
 <?php include '../layout/header.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
@@ -67,6 +75,12 @@ while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; }
         <p class="page-subtitle">NextGen Fitness — <?= date('F Y') ?></p>
       </div>
     </div>
+
+    <?php if (isset($_GET['paid'])): ?>
+    <div class="app-alert app-alert-success">
+      <i class="fa-solid fa-circle-check"></i> Salary marked as paid successfully.
+    </div>
+    <?php endif; ?>
 
     <!-- Summary Cards -->
     <div class="stats-grid">
@@ -92,6 +106,14 @@ while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; }
         </div>
       </div>
     </div>
+
+    <?php if (($pending_staff ?? 0) > 0): ?>
+    <div class="app-alert app-alert-warning">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <strong><?= $pending_staff ?> staff members</strong> have pending salary payments totalling
+      <strong>₹<?= number_format($pending_amount ?? 0, 2) ?></strong> — action required.
+    </div>
+    <?php endif; ?>
 
     <!-- Search & Filters -->
     <form method="GET" action="" class="flex gap-3 align-center mb-20">
@@ -147,7 +169,8 @@ while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; }
                   <div class="member-avatar"><?= strtoupper(substr($s['full_name'], 0, 1)) ?></div>
                   <div class="member-info">
                     <span class="name"><?= htmlspecialchars($s['full_name']) ?></span>
-                    <span class="joined"><?= htmlspecialchars($s['staff_role']) ?></span>
+                    <span class="joined"><?= ucfirst(htmlspecialchars($s['staff_role'])) ?></span>
+                    <span class="joined"><?= htmlspecialchars($s['email']) ?></span>
                   </div>
                 </div>
               </td>
@@ -163,12 +186,11 @@ while ($row = mysqli_fetch_assoc($res)) { $salaries[] = $row; }
                       <i class="fa-solid fa-file-invoice"></i> Payslip
                     </a>
                   <?php else: ?>
-                    <form method="POST" action="">
-                      <input type="hidden" name="salary_id" value="<?= $s['id'] ?>">
-                      <button type="submit" name="pay_now" class="btn app-btn-primary">
-                        <i class="fa-solid fa-dollar-sign"></i> Pay Now
-                      </button>
-                    </form>
+                    <a href="salary-payments.php?pay_now=1&salary_id=<?= $s['id'] ?>"
+                       class="btn app-btn-primary"
+                       onclick="return confirm('Pay ₹<?= number_format($s['net_salary'], 0) ?> to <?= htmlspecialchars($s['full_name']) ?>?')">
+                      <i class="fa-solid fa-indian-rupee-sign"></i> Pay Now
+                    </a>
                   <?php endif; ?>
                 </div>
               </td>

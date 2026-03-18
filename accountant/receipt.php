@@ -21,109 +21,89 @@ $res = mysqli_query($conn, "
 $receipt = mysqli_fetch_assoc($res);
 
 if (!$receipt) { header("Location: member-collections.php"); exit(); }
+
+// Invoice number
+$invoice = 'GMS_' . str_pad($pid * 9 + 1000000, 7, '0', STR_PAD_LEFT);
+
+// Valid until based on plan
+$plan_months   = ['Monthly' => 1, 'Quarterly' => 3, 'Yearly' => 12];
+$months_to_add = $plan_months[$receipt['plan']] ?? 1;
+$valid_until   = date('d F Y', strtotime($receipt['payment_date'] . " +{$months_to_add} months"));
+
+include '../layout/header.php';
+include '../layout/sidebar.php';
 ?>
-<?php include '../layout/header.php'; ?>
-<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">
 
-    <!-- Page Header -->
-    <div class="page-header flex justify-between align-center">
+    <!-- Back & Print — hidden on print -->
+    <div class="page-header flex justify-between align-center no-print">
       <div>
         <h1 class="page-title">Payment Receipt</h1>
-        <p class="page-subtitle">Receipt #<?= str_pad($receipt['id'], 6, '0', STR_PAD_LEFT) ?> — <?= date('d M Y', strtotime($receipt['payment_date'])) ?></p>
+        <p class="page-subtitle">Invoice #<?= $invoice ?></p>
       </div>
       <div class="action-buttons">
         <a href="member-collections.php" class="btn app-btn-secondary">
           <i class="fa-solid fa-arrow-left"></i> Back
         </a>
         <button onclick="window.print()" class="btn app-btn-primary">
-          <i class="fa-solid fa-print"></i> Print Receipt
+          <i class="fa-solid fa-print"></i> Print
         </button>
       </div>
     </div>
 
-    <!-- Receipt Container -->
+    <!-- Receipt Card -->
     <div class="members-table-container mb-20" id="receipt-print">
+      <div class="main-content">
 
-      <!-- Header Band -->
-      <div class="table-header flex justify-between align-center">
-        <div class="member-cell">
-          <div class="member-avatar">
+        <!-- Gym Logo & Title -->
+        <div class="text-center mb-20">
+          <div class="member-avatar" style="margin:0 auto 14px;">
             <i class="fa-solid fa-dumbbell"></i>
           </div>
-          <div class="member-info">
-            <span class="name">NextGen Fitness</span>
-            <span class="joined">Official Payment Receipt</span>
-          </div>
+          <h2>Payment Receipt</h2>
         </div>
-        <div class="text-right">
-          <span class="status-badge active">
-            <i class="fa-solid fa-circle-check"></i> PAID
-          </span>
-          <p class="page-subtitle mt-10">Receipt #<?= str_pad($receipt['id'], 6, '0', STR_PAD_LEFT) ?></p>
-          <p class="page-subtitle"><?= date('d M Y, h:i A', strtotime($receipt['payment_date'])) ?></p>
-        </div>
-      </div>
 
-      <!-- Member Details Section -->
-      <div class="main-content">
-        <div class="section">
-          <h3><i class="fa-solid fa-user"></i> Member Details</h3>
-          <p class="section-subtitle">Personal information of the member</p>
-          <div class="form-row">
-            <div>
-              <label>Member Name</label>
-              <p><?= htmlspecialchars($receipt['full_name']) ?></p>
-            </div>
-            <div>
-              <label>Member ID</label>
-              <p>#<?= str_pad($receipt['member_code'], 4, '0', STR_PAD_LEFT) ?></p>
-            </div>
-            <div>
-              <label>Email</label>
-              <p><?= htmlspecialchars($receipt['email']) ?></p>
-            </div>
-            <div>
-              <label>Phone</label>
-              <p><?= htmlspecialchars($receipt['phone']) ?></p>
-            </div>
-            <div>
-              <label>Membership Type</label>
-              <p><?= htmlspecialchars($receipt['membership_type']) ?></p>
-            </div>
-            <div>
-              <label>Membership Status</label>
-              <p>
-                <span class="status-badge <?= strtolower($receipt['membership_status']) ?>">
-                  <?= htmlspecialchars($receipt['membership_status']) ?>
-                </span>
-              </p>
-            </div>
+        <!-- Invoice Info -->
+        <div class="flex justify-between align-center mb-20">
+          <div>
+            <p class="page-subtitle">Invoice #<?= $invoice ?></p>
+            <p class="page-subtitle">NextGen Fitness GYM</p>
+            <p class="page-subtitle">123 Main Street, Mumbai</p>
+            <p class="page-subtitle">Tel: 022-1234-5678 | Email: nextgenfitness1407@gmail.com</p>
+          </div>
+          <div class="text-right">
+            <p class="page-subtitle">Last Payment: <?= date('Y-m-d', strtotime($receipt['payment_date'])) ?></p>
           </div>
         </div>
 
-        <!-- Payment Details Section -->
-        <div class="section">
-          <h3><i class="fa-solid fa-receipt"></i> Payment Details</h3>
-          <p class="section-subtitle">Transaction and payment information</p>
-          <div class="form-row">
-            <div>
-              <label>Service</label>
-              <p><?= htmlspecialchars($receipt['service']) ?></p>
-            </div>
-            <div>
-              <label>Plan</label>
-              <p>
-                <span class="plan-badge <?= strtolower($receipt['plan']) ?>">
-                  <?= htmlspecialchars($receipt['plan']) ?>
-                </span>
-              </p>
-            </div>
-            <div>
-              <label>Payment Method</label>
-              <p>
+        <hr>
+
+        <!-- Member Name & Paid On -->
+        <div class="text-center mb-20 mt-20">
+          <p class="page-title">Member: <?= htmlspecialchars($receipt['full_name']) ?></p>
+          <p class="page-subtitle">Paid On: <?= date('d F Y - h:i a', strtotime($receipt['payment_date'])) ?></p>
+        </div>
+
+        <hr>
+
+        <!-- Service Table -->
+        <table class="members-table mt-20">
+          <thead>
+            <tr>
+              <th>Service Taken</th>
+              <th>Payment Method</th>
+              <?php if (!empty($receipt['transaction_id'])): ?>
+              <th>Transaction ID</th>
+              <?php endif; ?>
+              <th class="text-right">Valid Upto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><?= htmlspecialchars($receipt['service']) ?></td>
+              <td>
                 <?php
                 $method_icons = [
                     'Cash'   => 'fa-money-bill-wave',
@@ -135,39 +115,46 @@ if (!$receipt) { header("Location: member-collections.php"); exit(); }
                 ?>
                 <i class="fa-solid <?= $icon ?>"></i>
                 <?= htmlspecialchars($receipt['payment_method']) ?>
-              </p>
-            </div>
-            <div>
-              <label>Payment Date</label>
-              <p class="date-display"><?= date('d M Y, h:i A', strtotime($receipt['payment_date'])) ?></p>
-            </div>
-            <?php if (!empty($receipt['transaction_id'])): ?>
-            <div>
-              <label>Transaction ID</label>
-              <p><?= htmlspecialchars($receipt['transaction_id']) ?></p>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($receipt['notes'])): ?>
-            <div>
-              <label>Notes</label>
-              <p><?= htmlspecialchars($receipt['notes']) ?></p>
-            </div>
-            <?php endif; ?>
-          </div>
-        </div>
+              </td>
+              <?php if (!empty($receipt['transaction_id'])): ?>
+              <td><?= htmlspecialchars($receipt['transaction_id']) ?></td>
+              <?php endif; ?>
+              <td class="text-right">
+                <span class="plan-badge <?= strtolower($receipt['plan']) ?>"><?= htmlspecialchars($receipt['plan']) ?></span>
+                &nbsp;<strong>(<?= $valid_until ?>)</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>Charge Per Month</td>
+              <td></td>
+              <?php if (!empty($receipt['transaction_id'])): ?>
+              <td></td>
+              <?php endif; ?>
+              <td class="text-right">₹<?= number_format($receipt['amount'], 0) ?></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total Amount</strong></td>
+              <td></td>
+              <?php if (!empty($receipt['transaction_id'])): ?>
+              <td></td>
+              <?php endif; ?>
+              <td class="text-right"><strong>₹<?= number_format($receipt['amount'], 0) ?></strong></td>
+            </tr>
+          </tfoot>
+        </table>
 
-        <!-- Total Amount -->
-        <div class="section">
-          <div class="flex justify-between align-center">
-            <h3 class="page-title">Total Amount Paid</h3>
-            <h3 class="page-title">₹<?= number_format($receipt['amount'], 2) ?></h3>
-          </div>
+        <?php if (!empty($receipt['notes'])): ?>
+        <div class="app-alert app-alert-warning mt-20">
+          <i class="fa-solid fa-note-sticky"></i> <?= htmlspecialchars($receipt['notes']) ?>
         </div>
+        <?php endif; ?>
 
-        <!-- Footer Note -->
-        <div class="app-alert app-alert-success">
+        <!-- Thank You Note -->
+        <div class="app-alert app-alert-success mt-20">
           <i class="fa-solid fa-circle-check"></i>
-          Payment verified and confirmed by NextGen Fitness. Thank you for your payment. This is a computer-generated receipt.
+          We sincerely appreciate your promptness regarding all payments from your side.
         </div>
 
       </div>
