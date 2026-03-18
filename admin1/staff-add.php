@@ -2,9 +2,10 @@
 session_start();
 require_once '../dbcon.php';
 
-/* TEMP: simulate logged-in user */
-$_SESSION['role'] = 'admin';
-$page = 'staff-add'; // For active sidebar highlight
+if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
+if ($_SESSION['role'] != 'admin') { header("Location: ../index.php"); exit(); }
+
+$page = 'staff-add';
 
 $success_message = '';
 $error_message = '';

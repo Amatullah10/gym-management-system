@@ -13,7 +13,7 @@ $working      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FRO
 $maintenance  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Maintenance'"))['t'];
 $out_of_order = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM equipment WHERE status='Out of Order'"))['t'];
 $total_qty    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(quantity) as t FROM equipment"))['t'];
-$working_qty  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(working_units) as t FROM equipment"))['t'];
+$working_qty  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(working_units),0) as t FROM equipment"))['t'];
 
 $all_equipment = [];
 $res = mysqli_query($conn, "SELECT * FROM equipment ORDER BY status ASC, equipment_name ASC");
@@ -29,7 +29,7 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
 <div class="main-wrapper">
   <div class="main-content">
 
-    <div class="page-header flex justify-between align-center">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <div>
         <h1 class="page-title">Equipment Reports</h1>
         <p class="page-subtitle">Overview and summary of all gym equipment — <?= date('d M Y') ?></p>
@@ -107,7 +107,7 @@ $out_pct         = $total > 0 ? round(($out_of_order / $total) * 100) : 0;
     </div>
 
     <div class="members-table-container">
-      <div class="table-header flex justify-between align-center">
+      <div class="table-header" style="display:flex;justify-content:space-between;align-items:center;">
         <h3>Full Equipment Report</h3>
         <a href="equipment-list.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">Manage <i class="fa-solid fa-arrow-right"></i></a>
       </div>
