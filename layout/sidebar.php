@@ -46,10 +46,13 @@ $menus = [
         'announcements'  => true
     ],
     'accountant' => [
-        'dashboard'     => true,
-        'payments'      => true,
-        'reports'       => true,
-        'members'       => true
+        'dashboard'          => true,
+        'payments'           => true,
+        'reports'            => true,
+        'members'            => true,
+        'member_collections' => true,
+        'salary_payments'    => true,
+        'expenses'           => true
     ],
     'customer' => [
         'dashboard'     => true,
@@ -205,6 +208,33 @@ $user_menu = $menus[$user_role] ?? [];
       <li class="<?php if($page=='payments') echo 'active'; ?>">
         <a href="../modules/payments.php">
           <i class="fas fa-credit-card"></i><span>Payments</span>
+        </a>
+      </li>
+      <?php endif; ?>
+
+      <!-- ── NEW: Member Collections — Accountant ── -->
+      <?php if (!empty($user_menu['member_collections'])): ?>
+      <li class="<?php if($page=='member-collections') echo 'active'; ?>">
+        <a href="<?= $base ?>member-collections.php">
+          <i class="fas fa-wallet"></i><span>Member Collections</span>
+        </a>
+      </li>
+      <?php endif; ?>
+
+      <!-- ── NEW: Salary Payments — Accountant ── -->
+      <?php if (!empty($user_menu['salary_payments'])): ?>
+      <li class="<?php if($page=='salary-payments') echo 'active'; ?>">
+        <a href="<?= $base ?>salary-payments.php">
+          <i class="fas fa-money-bill-wave"></i><span>Salary Payments</span>
+        </a>
+      </li>
+      <?php endif; ?>
+
+      <!-- ── NEW: Expenses — Accountant ── -->
+      <?php if (!empty($user_menu['expenses'])): ?>
+      <li class="<?php if($page=='expenses') echo 'active'; ?>">
+        <a href="<?= $base ?>expenses.php">
+          <i class="fas fa-receipt"></i><span>Expenses</span>
         </a>
       </li>
       <?php endif; ?>
