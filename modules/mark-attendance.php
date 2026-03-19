@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance'])) {
 $today = date('Y-m-d');
 $check_new_members = "SELECT m.id FROM members m 
                       LEFT JOIN attendance a ON m.id = a.member_id AND a.attendance_date = '$today'
-                      WHERE m.membership_status = 'active' 
+                      WHERE m.membership_status = 'Active' 
                       AND a.id IS NULL 
                       AND DATE(m.created_at) = '$today'";
 $new_members_result = mysqli_query($conn, $check_new_members);
@@ -117,7 +117,7 @@ $sql = "SELECT
 FROM members m
 $trainer_join
 LEFT JOIN attendance a ON m.id = a.member_id AND a.attendance_date = ?
-WHERE m.membership_status = 'active'
+WHERE m.membership_status = 'Active'
 ORDER BY m.full_name ASC";
 
 $stmt = mysqli_prepare($conn, $sql);
