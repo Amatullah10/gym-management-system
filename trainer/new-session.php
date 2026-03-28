@@ -7,8 +7,16 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'trainer') {
 $page = 'schedule';
 $trainer_email = mysqli_real_escape_string($conn, $_SESSION['email']);
 
-// Get members for dropdown
-$members_q = mysqli_query($conn, "SELECT id, full_name FROM members WHERE membership_status='Active' ORDER BY full_name ASC");
+// Get trainer's staff ID from their email
+$trainer_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM staff WHERE email='$trainer_email'"));
+$trainer_id  = $trainer_row ? (int)$trainer_row['id'] : 0;
+
+// Get only members assigned to this trainer
+$members_q = mysqli_query($conn, "SELECT m.id, m.full_name
+    FROM members m
+    INNER JOIN trainer_assignments ta ON ta.member_id = m.id
+    WHERE ta.trainer_id = $trainer_id AND ta.status = 'Active' AND m.membership_status = 'Active'
+    ORDER BY m.full_name ASC");
 $members = [];
 while($r = mysqli_fetch_assoc($members_q)) $members[] = $r;
 
@@ -67,10 +75,14 @@ include '../layout/sidebar.php';
             <div>
               <label>Member *</label>
               <select name="member_id" required>
+                <?php if(empty($members)): ?>
+                <option value="">No members assigned to you yet</option>
+                <?php else: ?>
                 <option value="">Select a member</option>
                 <?php foreach($members as $m): ?>
                 <option value="<?= $m['id'] ?>" <?= (isset($_GET['member_id']) && $_GET['member_id']==$m['id']) ? 'selected' : '' ?>><?= htmlspecialchars($m['full_name']) ?></option>
                 <?php endforeach; ?>
+                <?php endif; ?>
               </select>
             </div>
             <div>
