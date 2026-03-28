@@ -100,8 +100,24 @@ while ($row = mysqli_fetch_assoc($res5)) $alert_equipment[] = $row;
 
     <!-- Page Header -->
     <div class="page-header">
-      <h1 class="page-title">Reports</h1>
-      <p class="page-subtitle">Complete gym overview — <?= date('d M Y') ?></p>
+      <div>
+        <h1 class="page-title">Reports</h1>
+        <p class="page-subtitle">Complete gym overview — <?= date('d M Y') ?></p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="../modules/members.php" class="btn app-btn-secondary" style="font-size:13px;">
+          <i class="fas fa-users"></i> Members
+        </a>
+        <a href="../modules/attendance-report.php" class="btn app-btn-secondary" style="font-size:13px;">
+          <i class="fas fa-calendar-check"></i> Attendance
+        </a>
+        <a href="../modules/payments.php" class="btn app-btn-secondary" style="font-size:13px;">
+          <i class="fas fa-credit-card"></i> Payments
+        </a>
+        <a href="equipment-list.php" class="btn app-btn-secondary" style="font-size:13px;">
+          <i class="fas fa-dumbbell"></i> Equipment
+        </a>
+      </div>
     </div>
 
     <!-- ── 1. MEMBERS REPORT ─────────────────────────────────────────────── -->

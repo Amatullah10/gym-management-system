@@ -19,8 +19,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $gym_address  = mysqli_real_escape_string($conn, $_POST['gym_address']);
         $gym_capacity = (int)$_POST['gym_capacity'];
 
-        // Store in a settings table or just show success for now
-        $success = "Gym information updated successfully!";
+        // Create table if not exists
+        mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `gym_settings` (
+            `setting_key` varchar(100) NOT NULL PRIMARY KEY,
+            `setting_value` text NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $settings_data = [
+            'gym_name'     => $gym_name,
+            'gym_email'    => $gym_email,
+            'gym_phone'    => $gym_phone,
+            'gym_address'  => $gym_address,
+            'gym_capacity' => $gym_capacity
+        ];
+
+        $all_ok = true;
+        foreach ($settings_data as $key => $value) {
+            $key_esc = mysqli_real_escape_string($conn, $key);
+            $val_esc = mysqli_real_escape_string($conn, $value);
+            $res = mysqli_query($conn, "INSERT INTO gym_settings (setting_key, setting_value) 
+                VALUES ('$key_esc', '$val_esc') 
+                ON DUPLICATE KEY UPDATE setting_value='$val_esc'");
+            if (!$res) $all_ok = false;
+        }
+        $success = $all_ok ? "Gym information updated and saved successfully!" : "Error saving some settings.";
     }
 
     // Change Password
@@ -49,6 +71,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get admin info
 $admin = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE email='" . mysqli_real_escape_string($conn, $_SESSION['email']) . "'"));
+
+// Load saved gym settings from DB
+$gym_settings = [];
+mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `gym_settings` (
+    `setting_key` varchar(100) NOT NULL PRIMARY KEY,
+    `setting_value` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+$settings_res = mysqli_query($conn, "SELECT setting_key, setting_value FROM gym_settings");
+if ($settings_res) {
+    while ($row = mysqli_fetch_assoc($settings_res)) {
+        $gym_settings[$row['setting_key']] = $row['setting_value'];
+    }
+}
+$s_gym_name     = $gym_settings['gym_name']     ?? 'NextGen Fitness';
+$s_gym_email    = $gym_settings['gym_email']    ?? 'nextgenfitness1407@gmail.com';
+$s_gym_phone    = $gym_settings['gym_phone']    ?? '+91 98765 43210';
+$s_gym_address  = $gym_settings['gym_address']  ?? 'NextGen Fitness, Veraval, Gujarat, India';
+$s_gym_capacity = $gym_settings['gym_capacity'] ?? '150';
 
 // Get quick stats for info
 $total_members = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members"))['t'];
@@ -97,26 +137,26 @@ $total_equip   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FR
             <div class="form-row">
               <div>
                 <label>Gym Name</label>
-                <input type="text" name="gym_name" value="NextGen Fitness">
+              <input type="text" name="gym_name" value="<?= htmlspecialchars($s_gym_name) ?>">
               </div>
               <div>
                 <label>Contact Email</label>
-                <input type="email" name="gym_email" value="nextgenfitness1407@gmail.com">
+                <input type="email" name="gym_email" value="<?= htmlspecialchars($s_gym_email) ?>">
               </div>
             </div>
             <div class="form-row">
               <div>
                 <label>Phone Number</label>
-                <input type="text" name="gym_phone" value="+91 98765 43210">
+                <input type="text" name="gym_phone" value="<?= htmlspecialchars($s_gym_phone) ?>">
               </div>
               <div>
                 <label>Gym Capacity</label>
-                <input type="number" name="gym_capacity" value="150">
+                <input type="number" name="gym_capacity" value="<?= htmlspecialchars($s_gym_capacity) ?>">
               </div>
             </div>
             <div>
               <label>Address</label>
-              <textarea name="gym_address">NextGen Fitness, Veraval, Gujarat, India</textarea>
+            <textarea name="gym_address"><?= htmlspecialchars($s_gym_address) ?></textarea>
             </div>
             <button type="submit" name="update_gym" class="btn app-btn-primary mt-3">
               <i class="fas fa-save"></i> Save Changes

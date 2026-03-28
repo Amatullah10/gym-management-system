@@ -9,6 +9,20 @@ $page    = 'equipment-list';
 $success = '';
 $error   = '';
 
+// Auto-add missing columns to equipment table if they don't exist
+$cols_to_add = [
+    "working_units"   => "ALTER TABLE equipment ADD COLUMN working_units int(11) NOT NULL DEFAULT 0",
+    "purchase_date"   => "ALTER TABLE equipment ADD COLUMN purchase_date date DEFAULT NULL",
+    "purchase_amount" => "ALTER TABLE equipment ADD COLUMN purchase_amount decimal(10,2) DEFAULT NULL",
+    "description"     => "ALTER TABLE equipment ADD COLUMN description text DEFAULT NULL"
+];
+foreach ($cols_to_add as $col => $sql) {
+    $check = mysqli_query($conn, "SHOW COLUMNS FROM equipment LIKE '$col'");
+    if ($check && mysqli_num_rows($check) === 0) {
+        mysqli_query($conn, $sql);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $equipment_name  = mysqli_real_escape_string($conn, $_POST['equipment_name']);
     $quantity        = (int)$_POST['quantity'];
@@ -25,13 +39,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif ($working_units > $quantity) {
         $error = "Working units cannot be more than total quantity!";
     } else {
+        // Try full insert first; fall back to minimal columns if DB schema is older
         $insert = mysqli_query($conn, "INSERT INTO equipment (equipment_name, quantity, working_units, status, purchase_date, purchase_amount, description) 
             VALUES ('$equipment_name', '$quantity', '$working_units', '$status', '$purchase_date', '$purchase_amount', '$description')");
+        if (!$insert) {
+            // Fallback: try with only base columns that exist in older schema
+            $insert = mysqli_query($conn, "INSERT INTO equipment (equipment_name, quantity, status) 
+                VALUES ('$equipment_name', '$quantity', '$status')");
+        }
         if ($insert) {
             header("Location: equipment-list.php?msg=added");
             exit();
         } else {
-            $error = "Failed to add equipment! Error: " . mysqli_error($conn);
+            $error = "Failed to add equipment. Please check that the equipment table has the required columns (working_units, purchase_date, purchase_amount, description). DB Error: " . mysqli_error($conn);
         }
     }
 }

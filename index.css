@@ -52,9 +52,9 @@ body {
    ICON & TITLE
 ====================================================== */
 .icon-badge {
-  background: var(--brand-red);
-  width: 70px;
-  height: 70px;
+  /* background: black; */
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   display: flex;
   align-items: center;

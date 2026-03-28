@@ -100,7 +100,7 @@ while ($row = mysqli_fetch_assoc($res3)) $announcements[] = $row;
         <p class="page-subtitle">Complete overview of your gym operations</p>
       </div>
       <div style="display:flex;gap:10px;">
-        <a href="../modules/attendance-report.php" class="btn app-btn-secondary">
+        <a href="reports.php" class="btn app-btn-secondary">
           <i class="fas fa-file-pdf"></i> Reports
         </a>
         <a href="../modules/member-entry.php" class="btn app-btn-primary">

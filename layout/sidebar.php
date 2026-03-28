@@ -43,13 +43,16 @@ $menus = [
         'dashboard'      => true,
         'members'        => true,
         'attendance'     => true,
-        'announcements'  => true
+        'announcements'  => true,
+        'receptionist_members' => true
     ],
     'accountant' => [
-        'dashboard' => true,
-        'payments'  => true,
-        'reports'   => true,
-        'members'   => true
+        'dashboard'        => true,
+        'payments'         => true,
+        'salary_payments'  => true,
+        'search_payment'   => true,
+        'reports'          => true,
+        'members'          => true
     ],
     'customer' => [
         'dashboard'     => true,
@@ -171,12 +174,12 @@ $user_menu = $menus[$user_role] ?? [];
         </label>
         <ul class="submenu-items">
           <li class="<?php if($page=='mark-attendance') echo 'active'; ?>">
-            <a href="../modules/mark-attendance.php">
+            <a href="<?php echo ($user_role=='receptionist') ? $base.'mark_attendance.php' : '../modules/mark-attendance.php'; ?>">
               <i class="fas fa-arrow-right"></i> Mark Attendance
             </a>
           </li>
           <li class="<?php if($page=='view-attendance') echo 'active'; ?>">
-            <a href="../modules/view-attendance.php">
+            <a href="<?php echo ($user_role=='receptionist') ? $base.'view_attendance.php' : '../modules/view-attendance.php'; ?>">
               <i class="fas fa-arrow-right"></i> View Attendance
             </a>
           </li>
@@ -191,6 +194,15 @@ $user_menu = $menus[$user_role] ?? [];
       </li>
       <?php endif; ?>
 
+      <!-- ── Receptionist Members Quick Link ── -->
+      <?php if (!empty($user_menu['receptionist_members'])): ?>
+      <li class="<?php if($page=='members-list') echo 'active'; ?>">
+        <a href="../modules/members.php">
+          <i class="fas fa-list"></i><span>Members List</span>
+        </a>
+      </li>
+      <?php endif; ?>
+
       <!-- ── Announcements — All roles, single link to module ── -->
       <?php if (!empty($user_menu['announcements'])): ?>
       <li class="<?php if($page=='announcements') echo 'active'; ?>">
@@ -202,12 +214,50 @@ $user_menu = $menus[$user_role] ?? [];
 
       <!-- ── Payments — Admin, Accountant ── -->
       <?php if (!empty($user_menu['payments'])): ?>
-      <li class="<?php if($page=='payments') echo 'active'; ?>">
-        <a href="../modules/payments.php">
+      <li class="submenu">
+        <input type="checkbox" id="payments-menu" class="toggle-input"
+          <?php if(in_array($page,['payments','salary-payments','search-payment','payment-list','record-payment'])) echo 'checked'; ?>>
+        <label for="payments-menu" class="submenu-label">
           <i class="fas fa-credit-card"></i><span>Payments</span>
-        </a>
+        </label>
+        <ul class="submenu-items">
+          <?php if ($user_role == 'admin'): ?>
+          <li class="<?php if($page=='payments') echo 'active'; ?>">
+            <a href="../modules/payments.php">
+              <i class="fas fa-arrow-right"></i> All Payments
+            </a>
+          </li>
+          <?php endif; ?>
+          <?php if ($user_role == 'accountant'): ?>
+          <li class="<?php if($page=='payment-list') echo 'active'; ?>">
+            <a href="<?= $base ?>payment-list.php">
+              <i class="fas fa-arrow-right"></i> Payment List
+            </a>
+          </li>
+          <li class="<?php if($page=='record-payment') echo 'active'; ?>">
+            <a href="<?= $base ?>record-payment.php">
+              <i class="fas fa-arrow-right"></i> Record Payment
+            </a>
+          </li>
+          <?php if (!empty($user_menu['salary_payments'])): ?>
+          <li class="<?php if($page=='salary-payments') echo 'active'; ?>">
+            <a href="<?= $base ?>salary-payments.php">
+              <i class="fas fa-arrow-right"></i> Salary Payments
+            </a>
+          </li>
+          <?php endif; ?>
+          <?php if (!empty($user_menu['search_payment'])): ?>
+          <li class="<?php if($page=='search-payment') echo 'active'; ?>">
+            <a href="<?= $base ?>search-payment.php">
+              <i class="fas fa-arrow-right"></i> Search Payments
+            </a>
+          </li>
+          <?php endif; ?>
+          <?php endif; ?>
+        </ul>
       </li>
       <?php endif; ?>
+
 
 
 

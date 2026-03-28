@@ -372,9 +372,17 @@ $total_records = count($attendance_records);
               
               <!-- Actions -->
               <td>
-                <button class="btn-action view" onclick="viewDetails(this)" title="View Details">
-                  <i class="fa-regular fa-eye"></i>
-                </button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="btn-action view" onclick="viewDetails(this)" title="View Details">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                  <a href="mark-attendance.php?date=<?= htmlspecialchars($row['attendance_date']) ?>" 
+                     class="btn-action" 
+                     title="Go to Mark Attendance for this date"
+                     style="background:#fde8e8;color:var(--active-color);width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px;transition:all 0.2s;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                </div>
               </td>
             </tr>
             <?php endforeach; ?>

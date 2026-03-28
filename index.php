@@ -10,36 +10,46 @@ if (isset($_POST['submit'])) {
     $password = $_POST['password'];
     $role     = mysqli_real_escape_string($conn, $_POST['role']);
 
-    $query = "SELECT * FROM users WHERE email='$email' AND role='$role'";
-    $data  = mysqli_query($conn, $query);
+    // Step 1: Check if user exists with this email at all
+    $check_email = mysqli_query($conn, "SELECT id, role, password FROM users WHERE email='$email'");
 
-    if ($data && mysqli_num_rows($data) > 0) {
-        $row = mysqli_fetch_assoc($data);
-
-        // Support both hashed (new) and plain text (legacy) passwords
-        $password_ok = password_verify($password, $row['password']) || $row['password'] === $password;
-
-        if ($password_ok) {
-            session_unset();
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $row['id'];
-            $_SESSION['email']   = $row['email'];
-            $_SESSION['role']    = $row['role'];
-
-            switch ($row['role']) {
-                case 'admin':        header("Location: admin1/dashboard1.php"); break;
-                case 'trainer':      header("Location: trainer/index.php"); break;
-                case 'accountant':   header("Location: accountant/index.php"); break;
-                case 'receptionist': header("Location: receptionist/index.php"); break;
-                case 'customer':     header("Location: customer/index.php"); break;
-                default: echo "<script>alert('Invalid role');</script>";
-            }
-            exit();
-        } else {
-            $error_message = "Invalid email, password, or role!";
-        }
+    if (!$check_email || mysqli_num_rows($check_email) === 0) {
+        $error_message = "No account found with this email address.";
     } else {
-        $error_message = "Invalid email, password, or role!";
+        $check_row = mysqli_fetch_assoc($check_email);
+
+        // Step 2: Check if role matches
+        if ($check_row['role'] !== $role) {
+            $error_message = "This account is registered as <strong>" . htmlspecialchars($check_row['role']) . "</strong>, not as <strong>" . htmlspecialchars($role) . "</strong>. Please select the correct role.";
+        } else {
+            // Step 3: Verify password
+            $password_ok = password_verify($password, $check_row['password']) || $check_row['password'] === $password;
+
+            if (!$password_ok) {
+                $error_message = "Incorrect password. If you registered recently, try the temporary password (your email name + 123, e.g. <strong>rahul123</strong>). Or use <a href='auth/forgot-password.php' style='color:#941614;'>Forgot Password</a> to reset it.";
+            } else {
+                // All checks passed — log in
+                $query = "SELECT * FROM users WHERE email='$email' AND role='$role'";
+                $data  = mysqli_query($conn, $query);
+                $row   = mysqli_fetch_assoc($data);
+
+                session_unset();
+                session_regenerate_id(true);
+                $_SESSION['user_id'] = $row['id'];
+                $_SESSION['email']   = $row['email'];
+                $_SESSION['role']    = $row['role'];
+
+                switch ($row['role']) {
+                    case 'admin':        header("Location: admin1/dashboard1.php"); break;
+                    case 'trainer':      header("Location: trainer/index.php"); break;
+                    case 'accountant':   header("Location: accountant/index.php"); break;
+                    case 'receptionist': header("Location: receptionist/index.php"); break;
+                    case 'customer':     header("Location: customer/index.php"); break;
+                    default: header("Location: index.php");
+                }
+                exit();
+            }
+        }
     }
 }
 ?>
@@ -62,7 +72,7 @@ if (isset($_POST['submit'])) {
         <div class="login-card">
             <!-- Logo -->
             <div class="icon-badge">
-                <img src="assets/logo.png" alt="NextGen Fitness" style="width:70px;height:70px;object-fit:contain;"></div>
+                <img src="assets/logo.png" alt="NextGen Fitness" style="width:130px;height:1300px;object-fit:contain;"></div>
             
             <!-- Title -->
             <h2 class="login-title">NextGen Fitness</h2>

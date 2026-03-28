@@ -193,7 +193,7 @@ include '../layout/sidebar.php';
       <div class="table-container" style="padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
           <h3 style="margin:0;font-size:16px;font-weight:700;">Today's Workout</h3>
-          <a href="my-workout.php" style="color:var(--active-color);font-size:13px;text-decoration:none;">Full Plan →</a>
+          <a href="my-workout.php" style="color:var(--active-color);font-size:13px;text-decoration:none;font-weight:600;">View Full Plan <i class="fas fa-arrow-right" style="font-size:11px;"></i></a>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
           <?php if (!empty($plan_exercises)): ?>

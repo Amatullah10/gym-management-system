@@ -8,6 +8,19 @@ require_once '../dbcon.php';
 
 $page = 'payment-list';
 
+// Load gym settings
+$gym_settings = [];
+$settings_res = mysqli_query($conn, "SELECT setting_key, setting_value FROM gym_settings");
+if ($settings_res) {
+    while ($row = mysqli_fetch_assoc($settings_res)) {
+        $gym_settings[$row['setting_key']] = $row['setting_value'];
+    }
+}
+$gym_name    = $gym_settings['gym_name']    ?? 'NextGen Fitness GYM';
+$gym_address = $gym_settings['gym_address'] ?? '123 Main Street, Mumbai';
+$gym_phone   = $gym_settings['gym_phone']   ?? '022-1234-5678';
+$gym_email   = $gym_settings['gym_email']   ?? 'nextgenfitness1407@gmail.com';
+
 $payment_id = isset($_GET['payment_id']) ? (int)$_GET['payment_id'] : 0;
 if (!$payment_id) { header("Location: payments.php"); exit(); }
 
@@ -19,13 +32,15 @@ $res = mysqli_query($conn, $sql);
 if (!$res || mysqli_num_rows($res) === 0) { header("Location: payments.php"); exit(); }
 $p = mysqli_fetch_assoc($res);
 
-// Invoice number: GMS_ + random 7 digits based on id
 $invoice = 'GMS_' . str_pad($payment_id * 9 + 1000000, 7, '0', STR_PAD_LEFT);
 
-// Calculate valid until date from payment_date + plan duration
-$plan_months  = ['Monthly' => 1, 'Quarterly' => 3, 'Yearly' => 12];
+$plan_months   = ['Monthly' => 1, 'Quarterly' => 3, 'Yearly' => 12];
 $months_to_add = $plan_months[$p['plan']] ?? 1;
-$valid_until  = date('d F Y', strtotime($p['payment_date'] . " +{$months_to_add} months"));
+$valid_until   = date('d F Y', strtotime($p['payment_date'] . " +{$months_to_add} months"));
+
+// Logo path
+$logo_full = __DIR__ . '/../assets/logo.png';
+$logo_path = '../assets/logo.png';
 
 $role = $_SESSION['role'];
 include '../layout/header.php';
@@ -46,19 +61,22 @@ include '../layout/sidebar.php';
 <div class="main-wrapper">
   <div class="main-content">
 
-    <!-- Back Link -->
     <a href="payments.php" class="no-print" style="display:inline-flex;align-items:center;gap:6px;color:#555;text-decoration:none;font-size:14px;margin-bottom:30px;">
       <i class="fas fa-arrow-left"></i> Back to Payments
     </a>
 
-    <!-- Receipt Card -->
     <div class="receipt-card" style="max-width:560px;margin:0 auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.1);">
 
-      <!-- Logo -->
+      <!-- Logo + Title -->
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="width:70px;height:70px;border-radius:50%;border:2px solid var(--active-color);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-          <i class="fas fa-dumbbell" style="font-size:28px;color:var(--active-color);"></i>
-        </div>
+        <?php if (file_exists($logo_full)): ?>
+          <img src="<?= $logo_path ?>" alt="<?= htmlspecialchars($gym_name) ?>"
+               style="width:80px;height:80px;object-fit:contain;border-radius:50%;border:2px solid var(--active-color);margin:0 auto 12px;display:block;">
+        <?php else: ?>
+          <div style="width:70px;height:70px;border-radius:50%;border:2px solid var(--active-color);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+            <i class="fas fa-dumbbell" style="font-size:28px;color:var(--active-color);"></i>
+          </div>
+        <?php endif; ?>
         <h2 style="margin:0;font-size:22px;font-weight:700;">Payment Receipt</h2>
       </div>
 
@@ -66,9 +84,9 @@ include '../layout/sidebar.php';
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:20px;">
         <div>
           <div>Invoice #<?= $invoice ?></div>
-          <div>NextGen FItness GYM</div>
-          <div>123 Main Street, Mumbai</div>
-          <div>Tel: 022-1234-5678 | Email: nextgenfitness1407@gmail.com</div>
+          <div style="font-weight:600;"><?= htmlspecialchars($gym_name) ?></div>
+          <div><?= htmlspecialchars($gym_address) ?></div>
+          <div>Tel: <?= htmlspecialchars($gym_phone) ?> | Email: <?= htmlspecialchars($gym_email) ?></div>
         </div>
         <div style="text-align:right;">
           Last Payment: <?= date('Y-m-d', strtotime($p['payment_date'])) ?>
@@ -113,13 +131,11 @@ include '../layout/sidebar.php';
         </tfoot>
       </table>
 
-      <!-- Thank you note -->
       <p style="text-align:center;color:#aaa;font-size:13px;font-style:italic;margin-top:20px;">
         We sincerely appreciate your promptness regarding all payments from your side.
       </p>
     </div>
 
-    <!-- Print Button -->
     <div class="no-print" style="text-align:center;margin-top:24px;">
       <button onclick="window.print()" style="background:var(--active-color);color:#fff;border:none;padding:12px 30px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
         <i class="fas fa-print"></i> Print
@@ -128,5 +144,4 @@ include '../layout/sidebar.php';
 
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
