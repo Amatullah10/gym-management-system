@@ -15,7 +15,7 @@ while ($row = mysqli_fetch_assoc($res)) { $announcements[] = $row; }
 $total = count($announcements);
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

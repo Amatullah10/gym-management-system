@@ -15,7 +15,7 @@ if (mysqli_num_rows($check_table) > 0) {
 }
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

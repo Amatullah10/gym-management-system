@@ -106,7 +106,8 @@ if (isset($_POST['submit'])) {
                 <label>Password</label>
                 <div class="input-wrapper">
                     <i class="fa fa-lock"></i>
-                    <input type="password" name="password" placeholder="Enter password" required>
+                    <input type="password" name="password" id="passwordInput" placeholder="Enter password" required>
+                    <i class="fa fa-eye-slash" id="togglePassword" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);cursor:pointer;color:#666;font-size:14px;left:auto;" title="Show/Hide Password"></i>
                 </div>
 
                 <!-- Login Button -->
@@ -160,6 +161,16 @@ if (isset($_POST['submit'])) {
             if (!dropdown.contains(event.target)) {
                 menu.classList.remove("show");
             }
+        });
+
+        // Password eye toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput  = document.getElementById('passwordInput');
+        togglePassword.addEventListener('click', () => {
+            const isHidden = passwordInput.type === 'password';
+            passwordInput.type = isHidden ? 'text' : 'password';
+            togglePassword.classList.toggle('fa-eye-slash', !isHidden);
+            togglePassword.classList.toggle('fa-eye', isHidden);
         });
     </script>
 </body>

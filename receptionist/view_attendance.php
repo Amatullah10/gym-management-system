@@ -25,7 +25,7 @@ $total_this_month = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t
 $total_all        = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM attendance"))['t'];
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

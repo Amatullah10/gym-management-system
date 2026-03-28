@@ -51,7 +51,7 @@ $total_checkedout = count(array_filter($today_list, fn($a) => $a['check_out_time
 $total_present    = $total_checkedin - $total_checkedout;
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

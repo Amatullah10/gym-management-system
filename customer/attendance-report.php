@@ -16,14 +16,14 @@ if (!$member) {
 $member_id = $member['id'];
 
 $monthly = [];
-$res = mysqli_query($conn, "SELECT MONTHNAME(check_in) as month, YEAR(check_in) as year, COUNT(*) as total FROM attendance WHERE member_id = '$member_id' GROUP BY YEAR(check_in), MONTH(check_in) ORDER BY YEAR(check_in) DESC, MONTH(check_in) DESC");
+$res = mysqli_query($conn, "SELECT MONTHNAME(attendance_date) as month, YEAR(attendance_date) as year, COUNT(*) as total FROM attendance WHERE member_id = '$member_id' AND status='Present' GROUP BY YEAR(attendance_date), MONTH(attendance_date) ORDER BY YEAR(attendance_date) DESC, MONTH(attendance_date) DESC");
 while ($row = mysqli_fetch_assoc($res)) { $monthly[] = $row; }
 
 $total_days = array_sum(array_column($monthly, 'total'));
 $best_month = !empty($monthly) ? max(array_column($monthly, 'total')) : 0;
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

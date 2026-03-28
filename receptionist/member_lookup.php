@@ -27,7 +27,7 @@ $active  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM mem
 $expired = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM members WHERE membership_status='Expired'"))['t'];
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

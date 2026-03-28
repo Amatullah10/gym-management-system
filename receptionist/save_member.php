@@ -23,6 +23,7 @@ $membership_status = 'Active';
 // Auto generate password from email
 $email_name = explode('@', $email)[0];
 $password   = $email_name . '123';
+$hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
 // Check duplicate in both tables
 $check_member = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
@@ -40,7 +41,7 @@ $insert_member = mysqli_query($conn, "INSERT INTO members
 
 if ($insert_member) {
     // Step 2: Insert into users table
-    $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('', '$email', '$password')");
+    $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '$hashed_password')");
 
     if ($insert_user) {
         header("Location: add_member.php?success=1&email=" . urlencode($email) . "&password=" . urlencode($password));

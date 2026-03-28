@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../dbcon.php';
+require_once '../auth/mailer.php';
 
 if (!isset($_SESSION['role']) || !isset($_SESSION['email'])) { header("Location: ../index.php"); exit(); }
 if ($_SESSION['role'] != 'receptionist') { header("Location: ../index.php"); exit(); }
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Auto generate password from email
     $email_name = explode('@', $email)[0];
     $password   = $email_name . '123';
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
     // Check duplicate
     $check_member = mysqli_query($conn, "SELECT id FROM members WHERE email = '$email'");
@@ -41,14 +43,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if ($insert_member) {
             // Step 2: Insert into users table
-            $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('', '$email', '$password')");
+            $insert_user = mysqli_query($conn, "INSERT INTO users (role, email, password) VALUES ('customer', '$email', '$hashed_password')");
             if ($insert_user) {
-                $success = "Member registered successfully!<br>
-                    <strong>Login Email:</strong> $email<br>
-                    <strong>Auto Password:</strong> $password<br>
-                    <small style='color:#555;'>Please inform the member of these credentials.</small>";
+                // Send set-password email so member can set their own password
+                $full_name_plain = $_POST['full_name'];
+                $email_plain     = $_POST['email'];
+                $sent = sendSetPasswordEmail($email_plain, $full_name_plain, $conn);
+
+                if ($sent) {
+                    $success = "Member registered! A <strong>set-password email</strong> has been sent to <strong>$email</strong>.<br>
+                        <small style='color:#555;'>The member should check their inbox and set their own password to log in.</small>";
+                } else {
+                    // Email failed — fallback to showing auto password
+                    $success = "Member registered successfully!<br>
+                        <strong>Login Email:</strong> $email<br>
+                        <strong>Temporary Password:</strong> $password<br>
+                        <small style='color:#d00;'><i class='fa-solid fa-triangle-exclamation'></i> Email sending failed. Share these credentials manually.</small>";
+                }
             } else {
-                $error = "Member added but login failed! Error: " . mysqli_error($conn);
+                $error = "Member added but login account creation failed! Error: " . mysqli_error($conn);
             }
         } else {
             $error = "Failed to register member! Error: " . mysqli_error($conn);
@@ -57,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 <?php include '../layout/header.php'; ?>
-<?php include 'sidebar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="main-wrapper">
   <div class="main-content">

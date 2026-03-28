@@ -8,8 +8,9 @@ if ($_SESSION['role'] != 'accountant') { header("Location: ../index.php"); exit(
 $page       = 'payment-report';
 $page_title = 'Payment Report - Gym Management';
 
-$from_date = isset($_GET['from_date']) ? mysqli_real_escape_string($conn, $_GET['from_date']) : date('Y-m-01');
-$to_date   = isset($_GET['to_date'])   ? mysqli_real_escape_string($conn, $_GET['to_date'])   : date('Y-m-d');
+// Validate date inputs strictly — only allow YYYY-MM-DD format to prevent SQLi
+$from_date = (isset($_GET['from_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from_date'])) ? $_GET['from_date'] : date('Y-m-01');
+$to_date   = (isset($_GET['to_date'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to_date']))   ? $_GET['to_date']   : date('Y-m-d');
 
 // Overall income stats
 $total_income  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(amount) as t FROM payments WHERE status='Paid' AND DATE(payment_date) BETWEEN '$from_date' AND '$to_date'"))['t'];

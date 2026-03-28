@@ -41,8 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remind_member_id'])) 
     $mname = mysqli_real_escape_string($conn, $_POST['remind_member_name']);
     $note  = "Payment reminder sent to $mname by " . $_SESSION['email'];
 
-    // Log reminder to DB
-    mysqli_query($conn, "INSERT INTO payment_reminders (member_id, type, message, sent_by) VALUES ($mid, 'General', '$note', '{$_SESSION['email']}')");
+    // Log reminder to DB — escape session email before inserting into SQL
+    $sent_by = mysqli_real_escape_string($conn, $_SESSION['email']);
+    mysqli_query($conn, "INSERT INTO payment_reminders (member_id, type, message, sent_by) VALUES ($mid, 'General', '$note', '$sent_by')");
 
     // Fetch member email to send actual email
     $mem_res   = mysqli_query($conn, "SELECT email FROM members WHERE id = $mid");

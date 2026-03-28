@@ -24,7 +24,9 @@ if (isset($_POST['add_expense'])) {
     $category     = mysqli_real_escape_string($conn, trim($_POST['category']));
     $description  = mysqli_real_escape_string($conn, trim($_POST['description']));
     $amount       = (float)$_POST['amount'];
-    $expense_date = mysqli_real_escape_string($conn, $_POST['expense_date']);
+    // Validate date format strictly — only allow YYYY-MM-DD
+    $raw_date     = trim($_POST['expense_date'] ?? '');
+    $expense_date = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw_date)) ? $raw_date : date('Y-m-d');
     mysqli_query($conn, "INSERT INTO expenses (category, description, amount, expense_date, status)
                          VALUES ('$category','$description','$amount','$expense_date','Pending')");
     header("Location: expenses.php");
