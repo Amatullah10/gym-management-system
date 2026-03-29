@@ -22,14 +22,14 @@ $gym_phone   = $gym_settings['gym_phone']   ?? '022-1234-5678';
 $gym_email   = $gym_settings['gym_email']   ?? 'nextgenfitness1407@gmail.com';
 
 $payment_id = isset($_GET['payment_id']) ? (int)$_GET['payment_id'] : 0;
-if (!$payment_id) { header("Location: payments.php"); exit(); }
+if (!$payment_id) { header("Location: ../admin1/payments.php"); exit(); }
 
 $sql = "SELECT p.*, m.full_name, m.email, m.phone
         FROM payments p
         JOIN members m ON m.id = p.member_id
         WHERE p.id = $payment_id";
 $res = mysqli_query($conn, $sql);
-if (!$res || mysqli_num_rows($res) === 0) { header("Location: payments.php"); exit(); }
+if (!$res || mysqli_num_rows($res) === 0) { header("Location: ../admin1/payments.php"); exit(); }
 $p = mysqli_fetch_assoc($res);
 
 $invoice = 'GMS_' . str_pad($payment_id * 9 + 1000000, 7, '0', STR_PAD_LEFT);
@@ -61,7 +61,7 @@ include '../layout/sidebar.php';
 <div class="main-wrapper">
   <div class="main-content">
 
-    <a href="payments.php" class="no-print" style="display:inline-flex;align-items:center;gap:6px;color:#555;text-decoration:none;font-size:14px;margin-bottom:30px;">
+    <a href="../admin1/payments.php" class="no-print" style="display:inline-flex;align-items:center;gap:6px;color:#555;text-decoration:none;font-size:14px;margin-bottom:30px;">
       <i class="fas fa-arrow-left"></i> Back to Payments
     </a>
 

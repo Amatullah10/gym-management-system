@@ -101,6 +101,65 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
   <!-- Custom CSS -->
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/common.css">
+  <style>
+    /* ── Toast Notifications ── */
+    .app-toast {
+      position: fixed;
+      top: 80px;           /* just below the 70px fixed header */
+      right: 24px;
+      z-index: 9999;       /* above everything including the header */
+      min-width: 320px;
+      max-width: 480px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.35s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(60px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .app-toast-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+    .app-toast-error   { background: #fee2e2; color: #7f1d1d; border-left: 4px solid #ef4444; }
+    .app-toast-warning { background: #fef9c3; color: #713f12; border-left: 4px solid #f59e0b; }
+
+    /* ── Compact Table Overrides ── */
+    .members-table-container { overflow-x: auto; }
+    .members-table { width: 100%; table-layout: fixed; font-size: 13px; border-collapse: collapse; }
+    .members-table thead th {
+      padding: 10px 8px;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      background: #f8f9fa;
+    }
+    .members-table tbody td { padding: 10px 8px; vertical-align: middle; }
+
+    /* Column widths — lock them so nothing overflows */
+    .members-table th:nth-child(1), .members-table td:nth-child(1) { width: 36px; text-align:center; }
+    .members-table th:nth-child(2), .members-table td:nth-child(2) { width: 210px; }
+    .members-table th:nth-child(3), .members-table td:nth-child(3) { width: 110px; }
+    .members-table th:nth-child(4), .members-table td:nth-child(4) { width: 90px; }
+    .members-table th:nth-child(5), .members-table td:nth-child(5) { width: 90px; }
+    .members-table th:nth-child(6), .members-table td:nth-child(6) { width: 80px; }
+    .members-table th:nth-child(7), .members-table td:nth-child(7) { width: 60px; text-align:center; }
+    .members-table th:nth-child(8), .members-table td:nth-child(8) { width: 140px; }
+    .members-table th:nth-child(9), .members-table td:nth-child(9) { width: 100px; }
+
+    /* Smaller member avatar */
+    .members-table .member-avatar { width: 34px; height: 34px; font-size: 13px; flex-shrink: 0; }
+    .members-table .member-cell   { display: flex; align-items: center; gap: 8px; }
+    .members-table .member-info .name   { font-size: 13px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px; }
+    .members-table .member-info .joined { font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px; }
+
+    /* Compact action buttons */
+    .members-table .btn { padding: 6px 10px !important; font-size: 12px !important; white-space: nowrap; }
+  </style>
 </head>
 <body>
 <?php include '../layout/header.php'; ?>
@@ -109,17 +168,18 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
 <div class="main-wrapper">
   <div class="main-content">
     
-    <!-- Success Message -->
+    <!-- Toast Notifications (fixed position, always visible above header) -->
     <?php if ($success_message): ?>
-      <div class="app-alert app-alert-success">
+      <div class="app-toast app-toast-success" id="appToast">
         <i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($success_message) ?>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;float:right;font-size:16px;cursor:pointer;color:inherit;margin-left:12px;">&#x2715;</button>
       </div>
     <?php endif; ?>
 
-    <!-- Error Message -->
     <?php if ($error_message): ?>
-      <div class="app-alert app-alert-error">
+      <div class="app-toast app-toast-error" id="appToast">
         <i class="fa-solid fa-circle-exclamation"></i> <?= htmlspecialchars($error_message) ?>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;float:right;font-size:16px;cursor:pointer;color:inherit;margin-left:12px;">&#x2715;</button>
       </div>
     <?php endif; ?>
     
@@ -249,9 +309,9 @@ $error_message = isset($_GET['error']) ? $_GET['error'] : '';
               
               <!-- Action - Make Payment -->
               <td>
-                <button class="btn app-btn-primary" style="padding: 8px 16px; font-size: 14px;" onclick="makePayment(<?= $member['id'] ?>)">
+                <a href="payment-gateway.php?member_id=<?= $member['id'] ?>&amount=<?= $member['membership_fee'] ?>" class="btn" style="padding: 8px 16px; font-size: 14px; background: #16a34a; color: #fff; border: none; border-radius: 8px; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
                   <i class="fa-solid fa-indian-rupee-sign"></i> Make Payment
-                </button>
+                </a>
               </td>
               
               <!-- Remind - Alert -->
@@ -435,13 +495,13 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
   });
 });
 
-// Auto-hide success/error messages
+// Auto-hide toast notifications after 5 seconds
 setTimeout(function() {
-  const alerts = document.querySelectorAll('.app-alert');
-  alerts.forEach(alert => {
-    alert.style.transition = 'opacity 0.5s';
-    alert.style.opacity = '0';
-    setTimeout(() => alert.remove(), 500);
+  document.querySelectorAll('.app-toast').forEach(toast => {
+    toast.style.transition = 'opacity 0.5s, transform 0.5s';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(60px)';
+    setTimeout(() => toast.remove(), 500);
   });
 }, 5000);
 </script>

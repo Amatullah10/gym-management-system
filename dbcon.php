@@ -2,19 +2,17 @@
 
 // Simple Database Connection File
 
-$host = "localhost";
-$user = "root";
-$pass = "";
+$host   = "localhost";
+$user   = "root";
+$pass   = "";
 $dbname = "gym";
 
-// Create connection
+// Create connection — halt execution if DB is unreachable
 $conn = mysqli_connect($host, $user, $pass, $dbname);
 
-// Check connection
-if ($conn) {
-   // echo "Connection Done.";
-}
-else{
-    echo "connection Failed.";
+if (!$conn) {
+    // BUG FIX #5: Previously just echoed text and kept running,
+    // causing every subsequent query to throw warnings.
+    die("DB connection failed: " . mysqli_connect_error());
 }
 ?>
