@@ -84,7 +84,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
     <div class="members-table-container mb-20">
       <div class="table-header flex justify-between align-center">
         <h3>Recently Registered Members</h3>
-        <a href="members.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="../modules/members.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
       <table class="members-table">
         <thead>
@@ -136,7 +136,7 @@ while ($row = mysqli_fetch_assoc($res2)) { $today_list[] = $row; }
           Today's Attendance
           <span class="app-badge app-badge-warning" style="margin-left:8px;"><?= $today_attendance ?> members</span>
         </h3>
-        <a href="view-attendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="../modules/view-attendance.php" style="color:var(--active-color); text-decoration:none; font-size:14px;">View All <i class="fa-solid fa-arrow-right"></i></a>
       </div>
 
       <?php if (!empty($today_list)): ?>

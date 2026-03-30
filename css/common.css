@@ -170,27 +170,38 @@ h2 {
   max-width: 500px;
 }
 
+/* Use double class + element for higher specificity than Bootstrap's input styles */
+.search-box.search-box input,
+.search-box input[type="text"],
+.search-box input[type="search"],
 .search-box input {
   width: 100%;
-  padding: 12px 15px 12px 45px;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
+  padding: 12px 15px 12px 42px !important; /* !important ensures Bootstrap cannot override left padding */
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 10px !important;
   font-size: 14px;
-  transition: all 0.3s;
+  background-color: #ffffff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: none;
 }
 
-.search-box input:focus {
-  outline: none;
-  border-color: var(--active-color);
-  box-shadow: 0 0 0 3px rgba(148, 22, 20, 0.1);
+.search-box input:focus,
+.search-box input[type="text"]:focus,
+.search-box input[type="search"]:focus {
+  outline: none !important;
+  border-color: var(--active-color) !important;
+  box-shadow: 0 0 0 3px rgba(148, 22, 20, 0.1) !important;
 }
 
 .search-box i {
   position: absolute;
-  left: 15px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #999;
+  color: #aaa;
+  font-size: 14px;
+  pointer-events: none; /* icon never blocks clicks on the input */
+  z-index: 1;
 }
 
 /* ======================================================
