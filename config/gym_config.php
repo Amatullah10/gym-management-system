@@ -9,6 +9,6 @@
 //  3. Paste LAT and LNG values below
 // ============================================================
 
-define('GYM_LAT',    19.0760);   // ← Your gym's latitude  (default: Mumbai)
-define('GYM_LNG',    72.8777);   // ← Your gym's longitude (default: Mumbai)
+define('GYM_LAT',    19.00612939260819);   // ← Your gym's latitude  (Worli, Mumbai)
+define('GYM_LNG',    72.82341079310956);   // ← Your gym's longitude (Worli, Mumbai)
 define('GYM_RADIUS', 500);       // ← Allowed radius in meters (500m recommended)
